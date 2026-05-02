@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Draw &amp; Solve — Math Adventure</title>
+  <title>TechMath — Math Adventure</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
   <script src="https://unpkg.com/ml5@1.2.1/dist/ml5.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
@@ -18,11 +18,9 @@
       color: #fff;
     }
 
-    /* ===== SCREEN SYSTEM ===== */
     .screen { display: none; min-height: 100vh; width: 100%; }
     .screen.active { display: flex; }
 
-    /* ===== SHARED BACK BUTTON ===== */
     .back-btn {
       position: fixed;
       top: 20px;
@@ -48,9 +46,6 @@
       transform: translateX(-2px);
     }
 
-    /* ============================================== */
-    /* ============== MAIN MENU ===================== */
-    /* ============================================== */
     #menu-screen {
       flex-direction: column;
       align-items: center;
@@ -279,9 +274,6 @@
       .menu-header { margin-bottom: 40px; }
     }
 
-    /* ============================================== */
-    /* ============== SQUEEZE GAME ================== */
-    /* ============================================== */
     #squeeze-screen {
       background: #1a0533;
       flex-direction: column;
@@ -289,9 +281,6 @@
     }
     #squeeze-screen canvas { display: block; }
 
-    /* ============================================== */
-    /* ============== FINGER GAME =================== */
-    /* ============================================== */
     #finger-screen {
       background: #1a1a2e;
       flex-direction: column;
@@ -538,22 +527,18 @@
     .feedback-overlay.wrong-fb .feedback-box { border-color: #EF233C; }
     .feedback-overlay.wrong-fb .feedback-result { color: #EF233C; }
 
-    .next-btn {
-      background: #FFD166;
-      color: #1a1a2e;
-      border: none;
-      border-radius: 50px;
-      padding: 14px 36px;
-      font-family: 'Fredoka One', cursive;
-      font-size: 1.2rem;
-      cursor: pointer;
-      margin-top: 16px;
-      transition: transform 0.2s, box-shadow 0.2s;
-      pointer-events: all;
+    .countdown-text {
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-top: 20px;
+      letter-spacing: 1px;
+      animation: countdown-pulse 1s ease-in-out infinite;
     }
-    .next-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 24px rgba(255,209,102,0.4);
+
+    @keyframes countdown-pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
     }
 
     .progress-dots {
@@ -575,15 +560,12 @@
 </head>
 <body>
 
-<!-- ============================================ -->
-<!-- =========== MAIN MENU SCREEN =============== -->
-<!-- ============================================ -->
 <div id="menu-screen" class="screen active">
   <div class="bg-orb orb1"></div>
   <div class="bg-orb orb2"></div>
 
   <div class="menu-header">
-    <h1 class="menu-title">Draw &amp; Solve</h1>
+    <h1 class="menu-title">TechMath</h1>
     <div class="menu-subtitle">Math Adventure</div>
   </div>
 
@@ -620,17 +602,11 @@
   <div class="menu-footer">HSLU · Interaction Design Project</div>
 </div>
 
-<!-- ============================================ -->
-<!-- =========== SQUEEZE GAME SCREEN ============ -->
-<!-- ============================================ -->
 <div id="squeeze-screen" class="screen">
   <button class="back-btn" onclick="showScreen('menu')">← Menu</button>
   <div id="squeeze-canvas-holder"></div>
 </div>
 
-<!-- ============================================ -->
-<!-- =========== FINGER GAME SCREEN ============= -->
-<!-- ============================================ -->
 <div id="finger-screen" class="screen">
   <button class="back-btn" onclick="showScreen('menu')">← Menu</button>
 
@@ -688,14 +664,11 @@
       <div class="feedback-emoji" id="feedbackEmoji">🎉</div>
       <div class="feedback-result" id="feedbackResult">Correct!</div>
       <div class="feedback-sub" id="feedbackSub">Well done!</div>
-      <button class="next-btn" onclick="nextQuestion()">Next Question →</button>
+      <div class="countdown-text" id="countdownText">Next question in 3...</div>
     </div>
   </div>
 </div>
 
-<!-- ============================================== -->
-<!-- =========== SCREEN ROUTER =================== -->
-<!-- ============================================== -->
 <script>
   let squeezeStarted = false;
   let fingerStarted = false;
@@ -712,17 +685,11 @@
       initFingerGame();
       fingerStarted = true;
     }
-
-    // p5 sketches keep running in background — that's fine, they're invisible
   }
 </script>
 
-<!-- ============================================== -->
-<!-- =========== SQUEEZE GAME LOGIC ============== -->
-<!-- ============================================== -->
 <script>
 function initSqueezeGame() {
-  // Math Pressure Game — built with p5.js (instance mode so it doesn't conflict with Finger game)
   const QUESTIONS = [
     { a: 2, op: '+', b: 2 },
     { a: 3, op: '+', b: 1 },
@@ -779,7 +746,6 @@ function initSqueezeGame() {
     };
 
     p.draw = function() {
-      // Only render if squeeze screen is visible (saves CPU when on other screens)
       if (!document.getElementById('squeeze-screen').classList.contains('active')) {
         if (connectBtn) connectBtn.hide();
         return;
@@ -1101,9 +1067,6 @@ function initSqueezeGame() {
 }
 </script>
 
-<!-- ============================================== -->
-<!-- =========== FINGER GAME LOGIC =============== -->
-<!-- ============================================== -->
 <script>
   let currentQ = 0;
   let score = 0;
@@ -1231,6 +1194,20 @@ function initSqueezeGame() {
       green.className = 'indicator idle';
       red.className   = 'indicator idle';
     }, 2000);
+
+    let secondsLeft = 3;
+    const countdownEl = document.getElementById('countdownText');
+    countdownEl.textContent = `Next question in ${secondsLeft}...`;
+
+    const countdownInterval = setInterval(() => {
+      secondsLeft--;
+      if (secondsLeft > 0) {
+        countdownEl.textContent = `Next question in ${secondsLeft}...`;
+      } else {
+        clearInterval(countdownInterval);
+        nextQuestion();
+      }
+    }, 1000);
   }
 
   function nextQuestion() {
@@ -1294,7 +1271,6 @@ function initSqueezeGame() {
       }
 
       p.draw = function() {
-        // Skip rendering when finger screen is hidden (saves CPU)
         if (!document.getElementById('finger-screen').classList.contains('active')) return;
 
         p.image(video, 0, 0);
