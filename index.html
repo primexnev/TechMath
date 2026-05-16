@@ -334,11 +334,11 @@
 
     .finger-main {
       display: flex;
-      gap: 24px;
+      gap: 28px;
       align-items: flex-start;
       justify-content: center;
       width: 100%;
-      max-width: 1200px;
+      max-width: 1400px;
       padding: 0 20px 40px;
       z-index: 10;
       position: relative;
@@ -352,15 +352,15 @@
     }
 
     .indicator {
-      width: 70px;
-      height: 70px;
+      width: 90px;
+      height: 90px;
       border-radius: 50%;
       border: 3px solid rgba(255,255,255,0.2);
       transition: all 0.4s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.8rem;
+      font-size: 2.2rem;
     }
     .indicator.green {
       background: #06D6A0;
@@ -399,8 +399,8 @@
     .question-card {
       background: rgba(255,255,255,0.07);
       border: 2px solid rgba(255,255,255,0.12);
-      border-radius: 24px;
-      padding: 24px 48px;
+      border-radius: 28px;
+      padding: 32px 60px;
       text-align: center;
       backdrop-filter: blur(10px);
       width: 100%;
@@ -408,15 +408,15 @@
     }
     .question-label {
       color: rgba(255,255,255,0.5);
-      font-size: 0.85rem;
+      font-size: 1rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 2px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .question-text {
       font-family: 'Fredoka One', cursive;
-      font-size: 3.5rem;
+      font-size: 4.5rem;
       color: #FFD166;
       line-height: 1;
     }
@@ -432,42 +432,42 @@
 
     .answer-overlay {
       position: absolute;
-      top: 12px;
-      left: 12px;
+      top: 14px;
+      left: 14px;
       background: rgba(0,0,0,0.6);
-      border-radius: 12px;
-      padding: 8px 16px;
+      border-radius: 14px;
+      padding: 10px 20px;
       color: #fff;
-      font-size: 1rem;
+      font-size: 1.1rem;
       font-weight: 800;
       pointer-events: none;
       display: flex;
-      gap: 16px;
+      gap: 18px;
     }
     .answer-overlay .confirmed { color: #FFD166; }
 
     .right-panel {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
       padding-top: 10px;
-      min-width: 200px;
+      min-width: 240px;
     }
 
     .instruction-card {
       background: rgba(255,255,255,0.07);
       border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 16px;
-      padding: 14px 16px;
+      border-radius: 18px;
+      padding: 16px 20px;
       color: rgba(255,255,255,0.8);
-      font-size: 0.85rem;
+      font-size: 0.95rem;
       line-height: 1.5;
     }
     .instruction-card .step {
       font-family: 'Fredoka One', cursive;
-      font-size: 1.1rem;
+      font-size: 1.25rem;
       color: #FFD166;
-      margin-bottom: 4px;
+      margin-bottom: 6px;
     }
     .instruction-card.active {
       border-color: #FFD166;
@@ -478,13 +478,13 @@
       background: rgba(255,255,255,0.07);
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 50px;
-      padding: 10px 24px;
+      padding: 12px 30px;
       color: #fff;
-      font-size: 0.9rem;
+      font-size: 1rem;
       font-weight: 600;
       text-align: center;
       width: 100%;
-      margin-top: 4px;
+      margin-top: 6px;
     }
     .status-bar .live { color: #06D6A0; }
     .status-bar .saved { color: #FFD166; }
@@ -543,12 +543,12 @@
 
     .progress-dots {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       justify-content: center;
-      margin-top: 8px;
+      margin-top: 10px;
     }
     .dot {
-      width: 10px; height: 10px;
+      width: 12px; height: 12px;
       border-radius: 50%;
       background: rgba(255,255,255,0.2);
       transition: all 0.3s ease;
@@ -556,6 +556,226 @@
     .dot.done { background: #06D6A0; }
     .dot.wrong-dot { background: #EF233C; }
     .dot.current { background: #FFD166; transform: scale(1.3); }
+
+    /* ===== TUTORIAL OVERLAY ===== */
+    .tutorial-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    .tutorial-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .tutorial-card {
+      background: linear-gradient(135deg, #2a1a4e, #1a1a2e);
+      border: 2px solid rgba(255, 209, 102, 0.3);
+      border-radius: 32px;
+      padding: 40px 50px;
+      max-width: 640px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      position: relative;
+      transform: scale(0.85);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .tutorial-overlay.show .tutorial-card { transform: scale(1); }
+
+    .tutorial-title {
+      font-family: 'Fredoka One', cursive;
+      font-size: 2.2rem;
+      color: #FFD166;
+      margin-bottom: 6px;
+    }
+    .tutorial-subtitle {
+      color: rgba(255,255,255,0.6);
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .tutorial-stage {
+      min-height: 280px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .tutorial-question {
+      background: rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 16px 32px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 2rem;
+      color: #FFD166;
+    }
+
+    .tutorial-hand {
+      font-size: 7rem;
+      filter: drop-shadow(0 4px 20px rgba(255, 209, 102, 0.4));
+      transition: all 0.5s ease;
+      line-height: 1;
+    }
+    .tutorial-hand.pop {
+      animation: hand-pop 0.4s ease-out;
+    }
+    @keyframes hand-pop {
+      0% { transform: scale(0.5); opacity: 0; }
+      60% { transform: scale(1.15); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .tutorial-hint {
+      color: rgba(255,255,255,0.85);
+      font-size: 1.15rem;
+      font-weight: 600;
+      min-height: 28px;
+    }
+
+    .tutorial-ring {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 6px solid rgba(255,255,255,0.15);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 4px 0;
+    }
+    .tutorial-ring::before {
+      content: '';
+      position: absolute;
+      top: -6px; left: -6px; right: -6px; bottom: -6px;
+      border-radius: 50%;
+      border: 6px solid transparent;
+      border-top-color: #FFD166;
+      border-right-color: #FFD166;
+      animation: ring-fill 2.5s linear forwards;
+    }
+    @keyframes ring-fill {
+      from { transform: rotate(-90deg); clip-path: polygon(50% 50%, 50% 0%, 50% 0%); }
+      to   { transform: rotate(270deg); }
+    }
+    .tutorial-ring-number {
+      font-family: 'Fredoka One', cursive;
+      font-size: 3rem;
+      color: #FFD166;
+    }
+
+    .tutorial-check {
+      font-size: 5rem;
+      color: #06D6A0;
+      animation: check-pop 0.5s ease-out;
+    }
+    @keyframes check-pop {
+      0% { transform: scale(0); }
+      60% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+
+    .tutorial-saved-badge {
+      background: linear-gradient(135deg, #FFD166, #ff9f1c);
+      color: #1a1a2e;
+      border-radius: 14px;
+      padding: 10px 22px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.5rem;
+      animation: hand-pop 0.4s ease-out;
+    }
+
+    .tutorial-step-dots {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .tutorial-step-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      transition: all 0.3s ease;
+    }
+    .tutorial-step-dot.active { background: #FFD166; transform: scale(1.3); }
+    .tutorial-step-dot.done { background: #06D6A0; }
+
+    .tutorial-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .tutorial-btn {
+      padding: 12px 28px;
+      border-radius: 50px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.05rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+      letter-spacing: 1px;
+    }
+    .tutorial-btn.primary {
+      background: linear-gradient(135deg, #FFD166, #ff9f1c);
+      color: #1a0533;
+      box-shadow: 0 6px 18px rgba(255, 209, 102, 0.4);
+    }
+    .tutorial-btn.primary:hover { transform: scale(1.05); }
+    .tutorial-btn.secondary {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .tutorial-btn.secondary:hover { background: rgba(255,255,255,0.18); }
+
+    .first-number-banner {
+      background: linear-gradient(135deg, #FFD166, #ff9f1c);
+      color: #1a1a2e;
+      border-radius: 18px;
+      padding: 14px 30px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 1.5rem;
+      text-align: center;
+      box-shadow: 0 6px 20px rgba(255, 209, 102, 0.4);
+      display: none;
+      animation: banner-pop 0.4s ease-out;
+    }
+    .first-number-banner.show { display: block; }
+    .first-number-banner .label {
+      font-family: 'Nunito', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.7;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .first-number-banner .big-num {
+      font-size: 2.4rem;
+      letter-spacing: 2px;
+    }
+
+    @keyframes banner-pop {
+      0% { transform: scale(0.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -627,6 +847,11 @@
         <div class="question-text" id="questionText">Loading...</div>
       </div>
 
+      <div class="first-number-banner" id="firstNumberBanner">
+        <span class="label">Saved so far</span>
+        <span class="big-num"><span id="firstNumberValue">10</span> + ?</span>
+      </div>
+
       <div class="canvas-wrapper">
         <div id="p5-container"></div>
         <div class="answer-overlay" id="answerOverlay">
@@ -637,7 +862,7 @@
       </div>
 
       <div class="status-bar" id="statusBar">
-        Show your <span class="live">answer</span> with fingers, then make a <span class="saved">fist ✊</span> to confirm
+        Show your <span class="live">answer</span> with fingers, then <span class="saved">hold steady for 5 seconds</span>
       </div>
 
       <div class="progress-dots" id="progressDots"></div>
@@ -650,11 +875,11 @@
       </div>
       <div class="instruction-card" id="step2card">
         <div class="step">Step 2</div>
-        Make a fist ✊ to submit
+        Hold steady for 5 seconds to confirm
       </div>
       <div class="instruction-card" id="step3card">
         <div class="step">Numbers > 10?</div>
-        Show 10 → fist → remaining → fist!
+        Show 10 → fist ✊ (repeat if needed) → remaining → hold 5s
       </div>
     </div>
   </div>
@@ -667,11 +892,33 @@
       <div class="countdown-text" id="countdownText">Next question in 3...</div>
     </div>
   </div>
-</div>
 
+  <!-- ===== TUTORIAL OVERLAY ===== -->
+  <div class="tutorial-overlay" id="tutorialOverlay">
+    <div class="tutorial-card">
+      <div class="tutorial-title" id="tutorialTitle">How to Play</div>
+      <div class="tutorial-subtitle" id="tutorialSubtitle">Quick tutorial</div>
+
+      <div class="tutorial-step-dots">
+        <div class="tutorial-step-dot" id="tutDot1"></div>
+        <div class="tutorial-step-dot" id="tutDot2"></div>
+      </div>
+
+      <div class="tutorial-stage" id="tutorialStage">
+        <!-- Filled dynamically by JS -->
+      </div>
+
+      <div class="tutorial-buttons">
+        <button class="tutorial-btn secondary" onclick="skipTutorial()">Skip</button>
+        <button class="tutorial-btn primary" id="tutorialNextBtn" onclick="nextTutorialStep()" style="display:none;">Got it! Let's play →</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
   let squeezeStarted = false;
   let fingerStarted = false;
+  let tutorialShown = false;
 
   function showScreen(name) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -681,7 +928,176 @@
       initSqueezeGame();
       squeezeStarted = true;
     }
-    if (name === 'finger' && !fingerStarted) {
+    if (name === 'finger') {
+      if (!tutorialShown) {
+        startTutorial();
+        tutorialShown = true;
+      } else if (!fingerStarted) {
+        initFingerGame();
+        fingerStarted = true;
+      }
+    }
+
+    // p5 sketches keep running in background — that's fine, they're invisible
+  }
+
+  // ===== TUTORIAL SYSTEM =====
+  let tutorialStep = 0;
+  const tutorialOverlay  = () => document.getElementById('tutorialOverlay');
+  const tutorialStage    = () => document.getElementById('tutorialStage');
+  const tutorialTitle    = () => document.getElementById('tutorialTitle');
+  const tutorialSubtitle = () => document.getElementById('tutorialSubtitle');
+  const tutorialNextBtn  = () => document.getElementById('tutorialNextBtn');
+
+  function startTutorial() {
+    tutorialStep = 0;
+    tutorialOverlay().classList.add('show');
+    playTutorialStep(0);
+  }
+
+  function setStepDots(active) {
+    for (let i = 1; i <= 2; i++) {
+      const dot = document.getElementById('tutDot' + i);
+      dot.className = 'tutorial-step-dot';
+      if (i < active) dot.classList.add('done');
+      if (i === active) dot.classList.add('active');
+    }
+  }
+
+  function clearStage() { tutorialStage().innerHTML = ''; }
+  function addToStage(html) { tutorialStage().innerHTML += html; }
+
+  function runSequence(steps) {
+    let totalDelay = 0;
+    steps.forEach(([delay, fn]) => {
+      totalDelay += delay;
+      setTimeout(fn, totalDelay);
+    });
+    return totalDelay;
+  }
+
+  function playTutorialStep(step) {
+    tutorialNextBtn().style.display = 'none';
+
+    if (step === 0) {
+      setStepDots(1);
+      tutorialTitle().textContent = 'Single-digit answers';
+      tutorialSubtitle().textContent = 'Show the number → hold steady';
+      clearStage();
+
+      runSequence([
+        [0, () => {
+          addToStage(`<div class="tutorial-question">2 + 3 = ?</div>`);
+          addToStage(`<div class="tutorial-hint">The answer is 5 — show 5 fingers!</div>`);
+        }],
+        [1200, () => {
+          tutorialStage().innerHTML = `
+            <div class="tutorial-question">2 + 3 = ?</div>
+            <div class="tutorial-hand pop">🖐️</div>
+            <div class="tutorial-hint">Now hold steady for 5 seconds...</div>
+          `;
+        }],
+        [1500, () => {
+          tutorialStage().innerHTML = `
+            <div class="tutorial-question">2 + 3 = ?</div>
+            <div class="tutorial-ring">
+              <div class="tutorial-ring-number">5</div>
+            </div>
+            <div class="tutorial-hint">Counting down — keep your hand still!</div>
+          `;
+        }],
+        [2800, () => {
+          tutorialStage().innerHTML = `
+            <div class="tutorial-question">2 + 3 = ?</div>
+            <div class="tutorial-check">✓</div>
+            <div class="tutorial-hint" style="color:#06D6A0;">Correct! Answer accepted: 5</div>
+          `;
+        }],
+        [1200, () => {
+          tutorialNextBtn().textContent = 'Next →';
+          tutorialNextBtn().style.display = 'inline-block';
+        }],
+      ]);
+
+    } else if (step === 1) {
+      setStepDots(2);
+      tutorialTitle().textContent = 'Numbers bigger than 10';
+      tutorialSubtitle().textContent = 'Show 10 → fist ✊ → remaining → hold';
+      clearStage();
+
+      runSequence([
+        [0, () => {
+          addToStage(`<div class="tutorial-question">7 + 5 = ?</div>`);
+          addToStage(`<div class="tutorial-hint">The answer is 12 — let's break it down!</div>`);
+        }],
+        [1500, () => {
+          tutorialStage().innerHTML = `
+            <div class="tutorial-question">7 + 5 = ?</div>
+            <div class="tutorial-hand pop">🙌</div>
+            <div class="tutorial-hint">Step 1: Show 10 fingers (both hands)</div>
+          `;
+        }],
+        [1800, () => {
+          tutorialStage().innerHTML = `
+            <div class="tutorial-question">7 + 5 = ?</div>
+            <div class="tutorial-hand pop">✊</div>
+            <div class="tutorial-hint">Step 2: Make a quick fist to save the 10</div>
+          `;
+        }],
+        [1500, () => {
+          tutorialStage().innerHTML = `
+            <div class="tutorial-question">7 + 5 = ?</div>
+            <div class="tutorial-saved-badge">Saved: 10 + ?</div>
+            <div class="tutorial-hint">Great! 10 is saved.</div>
+          `;
+        }],
+        [1500, () => {
+          tutorialStage().innerHTML = `
+            <div class="tutorial-question">7 + 5 = ?</div>
+            <div class="tutorial-saved-badge">Saved: 10 + ?</div>
+            <div class="tutorial-hand pop">✌️</div>
+            <div class="tutorial-hint">Step 3: Show the remaining 2 fingers</div>
+          `;
+        }],
+        [1800, () => {
+          tutorialStage().innerHTML = `
+            <div class="tutorial-question">7 + 5 = ?</div>
+            <div class="tutorial-saved-badge">Saved: 10 + ?</div>
+            <div class="tutorial-ring">
+              <div class="tutorial-ring-number">2</div>
+            </div>
+            <div class="tutorial-hint">Step 4: Hold steady for 5 seconds...</div>
+          `;
+        }],
+        [2800, () => {
+          tutorialStage().innerHTML = `
+            <div class="tutorial-question">7 + 5 = ?</div>
+            <div class="tutorial-check">✓</div>
+            <div class="tutorial-hint" style="color:#06D6A0;">Correct! 10 + 2 = 12</div>
+          `;
+        }],
+        [1200, () => {
+          tutorialNextBtn().textContent = "Let's play! →";
+          tutorialNextBtn().style.display = 'inline-block';
+        }],
+      ]);
+    }
+  }
+
+  function nextTutorialStep() {
+    tutorialStep++;
+    if (tutorialStep < 2) {
+      playTutorialStep(tutorialStep);
+    } else {
+      endTutorial();
+    }
+  }
+
+  function skipTutorial() { endTutorial(); }
+
+  function endTutorial() {
+    tutorialOverlay().classList.remove('show');
+    if (!fingerStarted) {
       initFingerGame();
       fingerStarted = true;
     }
@@ -1066,280 +1482,3 @@ function initSqueezeGame() {
   });
 }
 </script>
-
-<script>
-  let currentQ = 0;
-  let score = 0;
-  let streak = 0;
-  let difficulty = 1;
-  let results = [];
-  let answered = false;
-  let currentAnswer = 0;
-
-  function generateQuestion() {
-    let a, b, op, text, answer;
-
-    if (difficulty === 1) {
-      a = Math.floor(Math.random() * 4) + 1;
-      b = Math.floor(Math.random() * 4) + 1;
-      answer = a + b;
-      text = a + ' + ' + b + ' = ?';
-    } else if (difficulty === 2) {
-      op = Math.random() > 0.4 ? '+' : '-';
-      if (op === '+') {
-        a = Math.floor(Math.random() * 7) + 3;
-        b = Math.floor(Math.random() * 7) + 2;
-        answer = a + b;
-        text = a + ' + ' + b + ' = ?';
-      } else {
-        a = Math.floor(Math.random() * 8) + 6;
-        b = Math.floor(Math.random() * (a - 1)) + 1;
-        answer = a - b;
-        text = a + ' - ' + b + ' = ?';
-      }
-    } else {
-      op = Math.random() > 0.4 ? '+' : '-';
-      if (op === '+') {
-        a = Math.floor(Math.random() * 10) + 8;
-        b = Math.floor(Math.random() * 8) + 3;
-        answer = a + b;
-        text = a + ' + ' + b + ' = ?';
-      } else {
-        a = Math.floor(Math.random() * 10) + 12;
-        b = Math.floor(Math.random() * 9) + 2;
-        answer = a - b;
-        text = a + ' - ' + b + ' = ?';
-      }
-    }
-    return { text, answer };
-  }
-
-  function getDifficultyLabel() {
-    if (difficulty === 1) return '⭐ Easy';
-    if (difficulty === 2) return '⭐⭐ Medium';
-    return '⭐⭐⭐ Hard';
-  }
-
-  function loadQuestion() {
-    const q = generateQuestion();
-    currentAnswer = q.answer;
-
-    document.getElementById('questionText').textContent = q.text;
-    document.getElementById('questionCard').className = 'question-card';
-    document.getElementById('statusBar').innerHTML =
-      getDifficultyLabel() + ' &nbsp;|&nbsp; Streak: <span class="saved">' + streak +
-      '</span> &nbsp;|&nbsp; Show <span class="live">fingers</span> then <span class="saved">fist ✊</span>';
-    answered = false;
-
-    if (window.resetSketch) window.resetSketch();
-
-    const dots = document.getElementById('progressDots');
-    dots.innerHTML = '';
-    for (let i = 0; i < 10; i++) {
-      const d = document.createElement('div');
-      const rel = currentQ % 10;
-      const resIdx = results.length - 10 + i;
-      d.className = 'dot' +
-        (i === rel ? ' current' :
-         i < rel && resIdx >= 0 ? (results[resIdx] ? ' done' : ' wrong-dot') : '');
-      dots.appendChild(d);
-    }
-  }
-
-  function submitAnswer(userAnswer) {
-    if (answered) return;
-    answered = true;
-
-    const correct = currentAnswer;
-    const isCorrect = userAnswer === correct;
-
-    const green = document.getElementById('greenLight');
-    const red   = document.getElementById('redLight');
-    const card  = document.getElementById('questionCard');
-    const overlay = document.getElementById('feedbackOverlay');
-
-    green.className = 'indicator idle';
-    red.className   = 'indicator idle';
-
-    if (isCorrect) {
-      score++;
-      streak++;
-      results.push(true);
-      if (streak % 3 === 0 && difficulty < 3) difficulty++;
-
-      green.className = 'indicator green';
-      card.className  = 'question-card correct';
-      document.getElementById('feedbackEmoji').textContent  = streak >= 3 ? '🔥' : '🎉';
-      document.getElementById('feedbackResult').textContent = 'Correct!';
-      document.getElementById('feedbackSub').textContent    =
-        userAnswer + ' is right! ' + (streak >= 3 ? 'On fire! 🔥 Streak: ' + streak : 'Amazing!');
-      overlay.className = 'feedback-overlay correct-fb show';
-    } else {
-      streak = 0;
-      results.push(false);
-      if (difficulty > 1) difficulty--;
-
-      red.className  = 'indicator red';
-      card.className = 'question-card wrong';
-      document.getElementById('feedbackEmoji').textContent  = '😅';
-      document.getElementById('feedbackResult').textContent = 'Not quite!';
-      document.getElementById('feedbackSub').textContent    =
-        'You said ' + userAnswer + ', the answer was ' + correct;
-      overlay.className = 'feedback-overlay wrong-fb show';
-    }
-
-    document.getElementById('scoreDisplay').textContent = score;
-
-    setTimeout(() => {
-      green.className = 'indicator idle';
-      red.className   = 'indicator idle';
-    }, 2000);
-
-    let secondsLeft = 3;
-    const countdownEl = document.getElementById('countdownText');
-    countdownEl.textContent = `Next question in ${secondsLeft}...`;
-
-    const countdownInterval = setInterval(() => {
-      secondsLeft--;
-      if (secondsLeft > 0) {
-        countdownEl.textContent = `Next question in ${secondsLeft}...`;
-      } else {
-        clearInterval(countdownInterval);
-        nextQuestion();
-      }
-    }, 1000);
-  }
-
-  function nextQuestion() {
-    document.getElementById('feedbackOverlay').className = 'feedback-overlay';
-    currentQ++;
-    loadQuestion();
-  }
-
-  function initFingerGame() {
-    new p5(function(p) {
-      let handPose;
-      let video;
-      let hands = [];
-      let totalFingers = 0;
-
-      let fingerHistory = [];
-      const HISTORY_SIZE = 30;
-
-      let fistCount = 0;
-      const FIST_THRESHOLD = 10;
-
-      let firstNumber = null;
-
-      window.resetSketch = function() {
-        firstNumber    = null;
-        fingerHistory  = [];
-        fistCount      = 0;
-        document.getElementById('savedNum').textContent    = '—';
-        document.getElementById('confirmedNum').textContent = '0';
-        document.getElementById('step1card').className = 'instruction-card active';
-        document.getElementById('step2card').className = 'instruction-card';
-      };
-
-      p.preload = function() {
-        handPose = ml5.handPose({ flipped: true });
-      };
-
-      p.setup = function() {
-        let cnv = p.createCanvas(560, 420);
-        cnv.parent('p5-container');
-        video = p.createCapture(p.VIDEO, { flipped: true });
-        video.size(560, 420);
-        video.hide();
-        handPose.detectStart(video, function(results) { hands = results; });
-      };
-
-      function countFingers(hand) {
-        const tips  = [8, 12, 16, 20];
-        const bases = [6, 10, 14, 18];
-        let count = 0;
-        for (let i = 0; i < tips.length; i++) {
-          if (hand.keypoints[tips[i]].y < hand.keypoints[bases[i]].y) count++;
-        }
-        const thumbTip    = hand.keypoints[4];
-        const thumbBase   = hand.keypoints[2];
-        const palmCenter  = hand.keypoints[0];
-        const thumbDist     = p.dist(thumbTip.x, thumbTip.y, palmCenter.x, palmCenter.y);
-        const thumbBaseDist = p.dist(thumbBase.x, thumbBase.y, palmCenter.x, palmCenter.y);
-        if (thumbDist > thumbBaseDist * 1.6) count++;
-        return count;
-      }
-
-      p.draw = function() {
-        if (!document.getElementById('finger-screen').classList.contains('active')) return;
-
-        p.image(video, 0, 0);
-
-        totalFingers = 0;
-        for (let i = 0; i < hands.length; i++) {
-          const hand = hands[i];
-          totalFingers += countFingers(hand);
-          for (const kp of hand.keypoints) {
-            p.fill(hand.handedness === 'Left' ? p.color(0,150,255) : p.color(255,100,0));
-            p.noStroke();
-            p.circle(kp.x, kp.y, 10);
-          }
-        }
-
-        const isFist = hands.length > 0 && totalFingers === 0;
-
-        if (!isFist && hands.length > 0) {
-          fingerHistory.push(totalFingers);
-          if (fingerHistory.length > HISTORY_SIZE) fingerHistory.shift();
-        }
-
-        if (isFist) { fistCount++; } else { fistCount = 0; }
-
-        if (fistCount === FIST_THRESHOLD && fingerHistory.length > 0) {
-          const idx        = Math.max(0, fingerHistory.length - 15);
-          const savedValue = fingerHistory[idx];
-
-          if (savedValue > 0) {
-            if (firstNumber === null) {
-              firstNumber = savedValue;
-              document.getElementById('savedNum').textContent = firstNumber;
-              document.getElementById('step1card').className = 'instruction-card';
-              document.getElementById('step2card').className = 'instruction-card active';
-              fingerHistory = [];
-
-              if (firstNumber < 10) {
-                submitAnswer(firstNumber);
-                firstNumber = null;
-              }
-            } else {
-              const total = firstNumber + savedValue;
-              document.getElementById('savedNum').textContent =
-                firstNumber + '+' + savedValue + '=' + total;
-              submitAnswer(total);
-              firstNumber   = null;
-              fingerHistory = [];
-            }
-          }
-        }
-
-        document.getElementById('liveNum').textContent = totalFingers;
-        if (fingerHistory.length > 0) {
-          document.getElementById('confirmedNum').textContent =
-            fingerHistory[fingerHistory.length - 1];
-        }
-
-        if (isFist && fistCount > 0) {
-          const fistProgress = p.map(fistCount, 0, FIST_THRESHOLD, 0, p.width);
-          p.noStroke();
-          p.fill(6, 214, 160, 180);
-          p.rect(0, p.height - 8, fistProgress, 8, 4);
-        }
-      };
-    });
-
-    loadQuestion();
-  }
-</script>
-
-</body>
-</html>
