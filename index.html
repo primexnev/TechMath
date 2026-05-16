@@ -948,6 +948,8 @@
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(name + '-screen').classList.add('active');
 
+    if (name === 'menu' && window.resetSqueezeGame) window.resetSqueezeGame();
+
     if (name === 'squeeze' && !squeezeStarted) {
       initSqueezeGame();
       squeezeStarted = true;
@@ -1137,16 +1139,44 @@
 <script>
 function initSqueezeGame() {
   // Math Pressure Game — built with p5.js (instance mode so it doesn't conflict with Finger game)
-  const QUESTIONS = [
-    { a: 2, op: '+', b: 2 },
-    { a: 3, op: '+', b: 1 },
-    { a: 5, op: '-', b: 2 },
-    { a: 2, op: 'x', b: 3 },
-    { a: 8, op: '-', b: 3 },
-  ];
+  function makeQuestion(op) {
+    let a, b;
+    if (op === '+') {
+      a = Math.floor(Math.random() * 9) + 1;
+      b = Math.floor(Math.random() * (10 - a)) + 1;
+    } else if (op === '-') {
+      a = Math.floor(Math.random() * 8) + 2;
+      b = Math.floor(Math.random() * (a - 1)) + 1;
+    } else {
+      const pairs = [[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8],[1,9],[1,10],[2,2],[2,3],[2,4],[2,5],[3,3]];
+      const pair  = pairs[Math.floor(Math.random() * pairs.length)];
+      [a, b] = pair;
+    }
+    return { a, op, b };
+  }
 
-  const THRESHOLD = 10;
-  const MAX_RAW   = 50;
+  function generateQuestions() {
+    // Shuffle all 3 op types so every type is guaranteed in the first 3 slots
+    const ops = ['+', '-', 'x'];
+    for (let i = ops.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [ops[i], ops[j]] = [ops[j], ops[i]];
+    }
+
+    // Slots 4 and 5: pick any op that differs from the previous one
+    for (let i = 3; i < 5; i++) {
+      const prev = ops[i - 1];
+      const choices = ['+', '-', 'x'].filter(o => o !== prev);
+      ops.push(choices[Math.floor(Math.random() * choices.length)]);
+    }
+
+    return ops.map(makeQuestion);
+  }
+
+  let QUESTIONS = generateQuestions();
+
+  const THRESHOLD = 5;
+  const MAX_RAW   = 30;
   const TOTAL_ORBS = 10;
   const HOLD_DURATION = 2000;
 
@@ -1163,8 +1193,34 @@ function initSqueezeGame() {
   let disconnectedMidGame = false;
   let port, reader, serialConnected = false;
   let connectBtn, bgStars = [];
+  let alienPrevPressing = false;
+  let alienStage = 'idle'; // 'idle' | 'transform1' | 'transform2'
+  let alienPrevStage = 'idle';
+  let alienPopT = 1; // 0→1 progress for scale-pop; starts at 1 (no anim on first frame)
+  let imgAlienTransform1, imgAlienTransform2, imgAlienClosedEyes;
+  let shakeTimer = 0;
+  let tutorialActive = false;
+  let tutorialMsgIndex = 0;
+  const TUTORIAL_MSGS = [
+    "Hey! I'm Zorp 👋\nWelcome to Squeeze It!",
+    "A math question appears up top.\nPut the required pressure to sensor to reach the number you want!",
+    "Hold steady at the correct number\nfor 2 seconds to confirm your answer.",
+    "You have 10 seconds per question.\nPress R after game over to play again!",
+    "Alright, you're all set!\nLet's squeeze some math! 🚀"
+  ];
+  const SHAKE_FRAMES = 18;
+  const SHAKE_MAG = 7;
+  let imgAlienIdle, imgAlienPush;
 
   new p5(function(p) {
+    p.preload = function() {
+      imgAlienIdle       = p.loadImage('AlienIdleNo.png');
+      imgAlienPush       = p.loadImage('AlienPushNo.png');
+      imgAlienTransform1 = p.loadImage('AlienTransformNo1.png');
+      imgAlienTransform2 = p.loadImage('AlienTransformNo2.png');
+      imgAlienClosedEyes = p.loadImage('AlienClosedEyesNo1.png');
+    };
+
     p.setup = function() {
       const cnv = p.createCanvas(p.windowWidth, p.windowHeight);
       cnv.parent('squeeze-canvas-holder');
@@ -1203,6 +1259,7 @@ function initSqueezeGame() {
       p.background(270, 80, 8);
 
       if (!gameStarted)        { drawWaitingScreen();   return; }
+      if (tutorialActive)      { drawBgStars(); drawTutorialScreen(); return; }
       if (disconnectedMidGame) { drawReconnectScreen();  return; }
 
       const q     = QUESTIONS[p.min(state.qIndex, QUESTIONS.length - 1)];
@@ -1219,6 +1276,7 @@ function initSqueezeGame() {
       drawParticles();
       drawRings();
       spawnParticles(pct);
+      drawAlien(pct);
       drawDebugLabels();
 
       if (!state.answered) checkAnswer(level, ans);
@@ -1358,6 +1416,64 @@ function initSqueezeGame() {
       for (let i = 0; i < 5; i++) state.rings.push({ x: cx, y: cy, radius: 20, life: 1.0, hue: h });
     }
 
+    function drawAlien(pct) {
+      if (!imgAlienIdle || !imgAlienPush) return;
+
+      // Detect transition to pressing → trigger shake
+      const isPressing = state.currentRaw > THRESHOLD;
+      if (isPressing && !alienPrevPressing) shakeTimer = SHAKE_FRAMES;
+      alienPrevPressing = isPressing;
+      if (shakeTimer > 0) shakeTimer--;
+
+      // Decaying shake on transition (idle → push)
+      const shakeFactor = shakeTimer / SHAKE_FRAMES;
+      const transX = shakeTimer > 0 ? p.random(-SHAKE_MAG, SHAKE_MAG) * shakeFactor : 0;
+      const transY = shakeTimer > 0 ? p.random(-SHAKE_MAG * 0.5, SHAKE_MAG * 0.5) * shakeFactor : 0;
+
+      // Continuous vibration while pressing — scales with pressure level
+      const vib = isPressing ? pct * SHAKE_MAG * 1.4 : 0;
+      const vibX = vib > 0 ? p.random(-vib, vib) : 0;
+      const vibY = vib > 0 ? p.random(-vib * 0.5, vib * 0.5) : 0;
+
+      // Position: further right of the question, vertically aligned with it
+      const cx = p.width / 2, cy = p.height * 0.22;
+      const imgW = imgAlienIdle.width, imgH = imgAlienIdle.height;
+      const x = cx + 370 - imgW / 2 + transX + vibX;
+      const y = cy - imgH / 2 + transY + vibY;
+
+      p.push();
+      p.imageMode(p.CORNER);
+
+      // Detect stage change → kick off scale-pop
+      if (alienStage !== alienPrevStage) {
+        alienPopT      = 0;
+        alienPrevStage = alienStage;
+      }
+      alienPopT = Math.min(1, alienPopT + 0.09);
+      const popScale = easeOutBack(alienPopT);
+
+      const img    = isPressing ? imgAlienPush : stageImg(alienStage);
+      const imgCX  = x + imgAlienIdle.width  / 2;
+      const imgCY  = y + imgAlienIdle.height / 2;
+
+      p.translate(imgCX, imgCY);
+      p.scale(popScale);
+      p.translate(-imgCX, -imgCY);
+      p.image(img, x, y);
+      p.pop();
+    }
+
+    function easeOutBack(t) {
+      const c1 = 1.70158, c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    }
+
+    function stageImg(stage) {
+      if (stage === 'transform1') return imgAlienTransform1;
+      if (stage === 'transform2') return imgAlienTransform2;
+      return imgAlienIdle;
+    }
+
     function drawDebugLabels() {
       p.noStroke(); p.textAlign(p.LEFT, p.TOP); p.textSize(12);
       if (serialConnected) {
@@ -1403,7 +1519,18 @@ function initSqueezeGame() {
       state.answered = false; state.timeLeft = 10; state.currentRaw = 0;
       state.holdStart = null; state.holdLevel = null;
       clearInterval(state.timerInterval);
-      state.timerInterval = setInterval(tick, 1000);
+
+      if (state.qIndex === 0 && alienStage !== 'transform2') {
+        // Play transform sequence before the countdown starts
+        alienStage = 'idle';
+        setTimeout(() => { alienStage = 'transform1'; }, 400);
+        setTimeout(() => {
+          alienStage = 'transform2';
+          state.timerInterval = setInterval(tick, 1000);
+        }, 1000);
+      } else {
+        state.timerInterval = setInterval(tick, 1000);
+      }
     }
 
     function tick() {
@@ -1442,6 +1569,8 @@ function initSqueezeGame() {
 
     p.keyPressed = function() {
       if ((p.key === 'r' || p.key === 'R') && state.gameOver && gameStarted && serialConnected) {
+        QUESTIONS = generateQuestions();
+        alienStage = 'idle'; alienPrevStage = 'idle'; alienPopT = 1;
         state.qIndex = 0; state.score = 0; state.correct = 0; state.wrong = 0; state.unanswered = 0;
         state.holdStart = null; state.holdLevel = null; state.particles = []; state.rings = [];
         state.gameOver = false;
@@ -1449,9 +1578,141 @@ function initSqueezeGame() {
       }
     };
 
+    p.mousePressed = function() {
+      if (!tutorialActive) return;
+
+      // Skip button hit test
+      const skipW = 140, skipH = 50;
+      const skipX = p.width - skipW - 28;
+      const skipY = p.height - skipH - 24;
+      if (p.mouseX > skipX && p.mouseX < skipX + skipW &&
+          p.mouseY > skipY && p.mouseY < skipY + skipH) {
+        tutorialActive = false;
+        loadQuestion();
+        return;
+      }
+
+      tutorialMsgIndex++;
+      if (tutorialMsgIndex >= TUTORIAL_MSGS.length) {
+        tutorialActive = false;
+        loadQuestion();
+      }
+    };
+
+    function drawTutorialScreen() {
+      // Header
+      p.textAlign(p.CENTER, p.CENTER);
+      p.fill(280, 55, 100);
+      p.textSize(34);
+      p.text('How to Play', p.width / 2, p.height * 0.13);
+      p.fill(0, 0, 50);
+      p.textSize(12);
+      p.text('SQUEEZE IT', p.width / 2, p.height * 0.13 + 34);
+
+      if (!imgAlienIdle) return;
+
+      // Alien + bubble — fixed screen-percentage positions (avoids imgW transparent padding issues)
+      const imgW = imgAlienIdle.width, imgH = imgAlienIdle.height;
+      const alienCX = p.width * 0.38;
+      const alienCY = p.height * 0.56;
+      const tailLen = 18;
+      const bx      = p.width * 0.49;
+      const bw      = Math.min(420, p.width - bx - 30);
+      const bh      = 210;
+      const by      = alienCY - bh / 2;
+      const bcx     = bx + bw / 2;
+      const tailCY  = alienCY;
+
+      // Blink: eyes close for ~180ms every 2.2s
+      const blinkCycle  = p.millis() % 2200;
+      const isBlinking  = imgAlienClosedEyes && blinkCycle > 2020;
+      const tutAlienImg = isBlinking ? imgAlienClosedEyes : imgAlienIdle;
+
+      p.imageMode(p.CORNER);
+      p.image(tutAlienImg, alienCX - imgW / 2, alienCY - imgH / 2);
+
+      // Tail drawn first so the bubble rect covers its base
+      p.fill(0, 0, 98);
+      p.noStroke();
+      p.triangle(bx - tailLen, tailCY, bx, tailCY - 17, bx, tailCY + 17);
+
+      // Bubble
+      p.fill(0, 0, 98);
+      p.stroke(280, 60, 100);
+      p.strokeWeight(3);
+      p.rect(bx, by, bw, bh, 18);
+
+      // Message
+      p.noStroke();
+      p.fill(280, 80, 18);
+      p.textSize(14);
+      p.textAlign(p.CENTER, p.TOP);
+      p.textLeading(23);
+      p.text(TUTORIAL_MSGS[tutorialMsgIndex], bx + 20, by + 28, bw - 40, bh - 55);
+
+      // Pulsing click hint
+      const pulse = p.sin(p.frameCount * 0.09) * 0.5 + 0.5;
+      const isLast = tutorialMsgIndex === TUTORIAL_MSGS.length - 1;
+      p.fill(280, 55, 55, 55 + pulse * 45);
+      p.textSize(12);
+      p.textAlign(p.CENTER, p.BOTTOM);
+      p.text(isLast ? '▶  Click to start!' : '▶  Click to continue', bcx, by + bh - 10);
+
+      // Progress dots
+      const n = TUTORIAL_MSGS.length;
+      const dotY = by + bh + 22;
+      for (let i = 0; i < n; i++) {
+        const dx = bcx + (i - (n - 1) / 2) * 18;
+        p.noStroke();
+        if      (i < tutorialMsgIndex)  p.fill(140, 50, 65);
+        else if (i === tutorialMsgIndex) p.fill(280, 65, 100);
+        else                             p.fill(0, 0, 30);
+        p.circle(dx, dotY, i === tutorialMsgIndex ? 11 : 7);
+      }
+
+      // Skip button — bottom-right corner
+      const skipW = 140, skipH = 50;
+      const skipX = p.width - skipW - 28;
+      const skipY = p.height - skipH - 24;
+      const overSkip = p.mouseX > skipX && p.mouseX < skipX + skipW &&
+                       p.mouseY > skipY && p.mouseY < skipY + skipH;
+      p.noStroke();
+      p.fill(0, 0, overSkip ? 25 : 15, 85);
+      p.stroke(0, 0, overSkip ? 70 : 40);
+      p.strokeWeight(1.5);
+      p.rect(skipX, skipY, skipW, skipH, 20);
+      p.noStroke();
+      p.fill(0, 0, overSkip ? 90 : 60);
+      p.textSize(16);
+      p.textAlign(p.CENTER, p.CENTER);
+      p.text('Skip  ›', skipX + skipW / 2, skipY + skipH / 2);
+    }
+
     p.windowResized = function() {
       p.resizeCanvas(p.windowWidth, p.windowHeight);
       if (connectBtn) connectBtn.position(0, p.height - 100);
+    };
+
+    window.resetSqueezeGame = function() {
+      clearInterval(state.timerInterval);
+      Object.assign(state, {
+        qIndex: 0, score: 0, correct: 0, wrong: 0, unanswered: 0,
+        answered: false, timeLeft: 10, currentRaw: 0,
+        holdStart: null, holdLevel: null, particles: [], rings: [],
+        timerInterval: null, gameOver: false
+      });
+      QUESTIONS      = generateQuestions();
+      alienStage     = 'idle'; alienPrevStage = 'idle'; alienPopT = 1;
+      tutorialMsgIndex = 0;
+      disconnectedMidGame = false;
+
+      if (serialConnected) {
+        gameStarted    = true;
+        tutorialActive = true;
+      } else {
+        gameStarted    = false;
+        tutorialActive = false;
+      }
     };
 
     async function toggleConnect() {
@@ -1471,7 +1732,7 @@ function initSqueezeGame() {
         connectBtn.html('Disconnect Arduino');
         connectBtn.style('background', 'rgba(255,255,255,0.12)');
         readSerial();
-        if (!gameStarted) { gameStarted = true; loadQuestion(); }
+        if (!gameStarted) { gameStarted = true; tutorialActive = true; tutorialMsgIndex = 0; }
         else if (disconnectedMidGame) { disconnectedMidGame = false; state.timerInterval = setInterval(tick, 1000); }
       } catch(e) {
         alert('Connection failed: ' + e.message);
