@@ -1482,3 +1482,339 @@ function initSqueezeGame() {
   });
 }
 </script>
+  <script>
+  let currentQ = 0;
+  let score = 0;
+  let streak = 0;
+  let difficulty = 1;
+  let results = [];
+  let answered = false;
+  let currentAnswer = 0;
+
+  function generateQuestion() {
+    let a, b, op, text, answer;
+
+    if (difficulty === 1) {
+      a = Math.floor(Math.random() * 4) + 1;
+      b = Math.floor(Math.random() * 4) + 1;
+      answer = a + b;
+      text = a + ' + ' + b + ' = ?';
+    } else if (difficulty === 2) {
+      op = Math.random() > 0.4 ? '+' : '-';
+      if (op === '+') {
+        a = Math.floor(Math.random() * 7) + 3;
+        b = Math.floor(Math.random() * 7) + 2;
+        answer = a + b;
+        text = a + ' + ' + b + ' = ?';
+      } else {
+        a = Math.floor(Math.random() * 8) + 6;
+        b = Math.floor(Math.random() * (a - 1)) + 1;
+        answer = a - b;
+        text = a + ' - ' + b + ' = ?';
+      }
+    } else {
+      op = Math.random() > 0.4 ? '+' : '-';
+      if (op === '+') {
+        a = Math.floor(Math.random() * 10) + 8;
+        b = Math.floor(Math.random() * 8) + 3;
+        answer = a + b;
+        text = a + ' + ' + b + ' = ?';
+      } else {
+        a = Math.floor(Math.random() * 10) + 12;
+        b = Math.floor(Math.random() * 9) + 2;
+        answer = a - b;
+        text = a + ' - ' + b + ' = ?';
+      }
+    }
+    return { text, answer };
+  }
+
+  function getDifficultyLabel() {
+    if (difficulty === 1) return '⭐ Easy';
+    if (difficulty === 2) return '⭐⭐ Medium';
+    return '⭐⭐⭐ Hard';
+  }
+
+  function loadQuestion() {
+    const q = generateQuestion();
+    currentAnswer = q.answer;
+
+    document.getElementById('questionText').textContent = q.text;
+    document.getElementById('questionCard').className = 'question-card';
+    document.getElementById('statusBar').innerHTML =
+      getDifficultyLabel() + ' &nbsp;|&nbsp; Streak: <span class="saved">' + streak +
+      '</span> &nbsp;|&nbsp; Show <span class="live">fingers</span> then <span class="saved">hold 5s</span>';
+    answered = false;
+
+    if (window.resetSketch) window.resetSketch();
+
+    const dots = document.getElementById('progressDots');
+    dots.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+      const d = document.createElement('div');
+      const rel = currentQ % 10;
+      const resIdx = results.length - 10 + i;
+      d.className = 'dot' +
+        (i === rel ? ' current' :
+         i < rel && resIdx >= 0 ? (results[resIdx] ? ' done' : ' wrong-dot') : '');
+      dots.appendChild(d);
+    }
+  }
+
+  function submitAnswer(userAnswer) {
+    if (answered) return;
+    answered = true;
+
+    const correct = currentAnswer;
+    const isCorrect = userAnswer === correct;
+
+    const green = document.getElementById('greenLight');
+    const red   = document.getElementById('redLight');
+    const card  = document.getElementById('questionCard');
+    const overlay = document.getElementById('feedbackOverlay');
+
+    green.className = 'indicator idle';
+    red.className   = 'indicator idle';
+
+    if (isCorrect) {
+      score++;
+      streak++;
+      results.push(true);
+      if (streak % 3 === 0 && difficulty < 3) difficulty++;
+
+      green.className = 'indicator green';
+      card.className  = 'question-card correct';
+      document.getElementById('feedbackEmoji').textContent  = streak >= 3 ? '🔥' : '🎉';
+      document.getElementById('feedbackResult').textContent = 'Correct!';
+      document.getElementById('feedbackSub').textContent    =
+        userAnswer + ' is right! ' + (streak >= 3 ? 'On fire! 🔥 Streak: ' + streak : 'Amazing!');
+      overlay.className = 'feedback-overlay correct-fb show';
+    } else {
+      streak = 0;
+      results.push(false);
+      if (difficulty > 1) difficulty--;
+
+      red.className  = 'indicator red';
+      card.className = 'question-card wrong';
+      document.getElementById('feedbackEmoji').textContent  = '😅';
+      document.getElementById('feedbackResult').textContent = 'Not quite!';
+      document.getElementById('feedbackSub').textContent    =
+        'You said ' + userAnswer + ', the answer was ' + correct;
+      overlay.className = 'feedback-overlay wrong-fb show';
+    }
+
+    document.getElementById('scoreDisplay').textContent = score;
+
+    setTimeout(() => {
+      green.className = 'indicator idle';
+      red.className   = 'indicator idle';
+    }, 2000);
+
+    let secondsLeft = 3;
+    const countdownEl = document.getElementById('countdownText');
+    countdownEl.textContent = `Next question in ${secondsLeft}...`;
+
+    const countdownInterval = setInterval(() => {
+      secondsLeft--;
+      if (secondsLeft > 0) {
+        countdownEl.textContent = `Next question in ${secondsLeft}...`;
+      } else {
+        clearInterval(countdownInterval);
+        nextQuestion();
+      }
+    }, 1000);
+  }
+
+  function nextQuestion() {
+    document.getElementById('feedbackOverlay').className = 'feedback-overlay';
+    currentQ++;
+    loadQuestion();
+  }
+
+  function initFingerGame() {
+    new p5(function(p) {
+      let handPose;
+      let video;
+      let hands = [];
+      let totalFingers = 0;
+
+      let fingerHistory = [];
+      const HISTORY_SIZE = 30;
+
+      let fistCount = 0;
+      const FIST_THRESHOLD = 10;
+
+      let accumulated = 0;
+      let graceUntilFrame = 0;
+      const GRACE_FRAMES = 60;
+
+      let holdStartFrame = null;
+      let holdLevel = null;
+      const HOLD_FRAMES = 150;
+
+      window.resetSketch = function() {
+        accumulated    = 0;
+        graceUntilFrame = 0;
+        fingerHistory  = [];
+        fistCount      = 0;
+        holdStartFrame = null;
+        holdLevel      = null;
+        document.getElementById('savedNum').textContent    = '—';
+        document.getElementById('confirmedNum').textContent = '0';
+        document.getElementById('step1card').className = 'instruction-card active';
+        document.getElementById('step2card').className = 'instruction-card';
+        document.getElementById('firstNumberBanner').className = 'first-number-banner';
+      };
+
+      p.preload = function() {
+        handPose = ml5.handPose({ flipped: true });
+      };
+
+      p.setup = function() {
+        let cnv = p.createCanvas(720, 540);
+        cnv.parent('p5-container');
+        video = p.createCapture(p.VIDEO, { flipped: true });
+        video.size(720, 540);
+        video.hide();
+        handPose.detectStart(video, function(results) { hands = results; });
+      };
+
+      function countFingers(hand) {
+        const tips  = [8, 12, 16, 20];
+        const bases = [6, 10, 14, 18];
+        let count = 0;
+        for (let i = 0; i < tips.length; i++) {
+          if (hand.keypoints[tips[i]].y < hand.keypoints[bases[i]].y) count++;
+        }
+        const thumbTip    = hand.keypoints[4];
+        const thumbBase   = hand.keypoints[2];
+        const palmCenter  = hand.keypoints[0];
+        const thumbDist     = p.dist(thumbTip.x, thumbTip.y, palmCenter.x, palmCenter.y);
+        const thumbBaseDist = p.dist(thumbBase.x, thumbBase.y, palmCenter.x, palmCenter.y);
+        if (thumbDist > thumbBaseDist * 1.6) count++;
+        return count;
+      }
+
+      p.draw = function() {
+        if (!document.getElementById('finger-screen').classList.contains('active')) return;
+
+        p.image(video, 0, 0);
+
+        totalFingers = 0;
+        for (let i = 0; i < hands.length; i++) {
+          const hand = hands[i];
+          totalFingers += countFingers(hand);
+          for (const kp of hand.keypoints) {
+            p.fill(hand.handedness === 'Left' ? p.color(0,150,255) : p.color(255,100,0));
+            p.noStroke();
+            p.circle(kp.x, kp.y, 10);
+          }
+        }
+
+        const isFist = hands.length > 0 && totalFingers === 0;
+
+        if (!isFist && hands.length > 0) {
+          fingerHistory.push(totalFingers);
+          if (fingerHistory.length > HISTORY_SIZE) fingerHistory.shift();
+        }
+
+        if (isFist) { fistCount++; } else { fistCount = 0; }
+
+        // ── FIST: each fist with 10 fingers shown adds 10 to accumulated ──
+        if (!answered && fistCount === FIST_THRESHOLD && fingerHistory.length > 0) {
+          const idx        = Math.max(0, fingerHistory.length - 15);
+          const savedValue = fingerHistory[idx];
+
+          if (savedValue === 10) {
+            accumulated += 10;
+            document.getElementById('savedNum').textContent = accumulated;
+            document.getElementById('firstNumberValue').textContent = accumulated;
+            document.getElementById('firstNumberBanner').className = 'first-number-banner show';
+            document.getElementById('step1card').className = 'instruction-card';
+            document.getElementById('step2card').className = 'instruction-card active';
+            fingerHistory = [];
+            holdStartFrame = null;
+            holdLevel = null;
+            graceUntilFrame = p.frameCount + GRACE_FRAMES;
+          }
+        }
+
+        // ── HOLD-TO-CONFIRM: final answer submission (5 seconds steady) ──
+        const inGracePeriod = p.frameCount < graceUntilFrame;
+        if (!answered && !inGracePeriod && !isFist && hands.length > 0 && totalFingers > 0) {
+          if (totalFingers !== holdLevel) {
+            holdLevel = totalFingers;
+            holdStartFrame = p.frameCount;
+          } else {
+            if (p.frameCount - holdStartFrame >= HOLD_FRAMES) {
+              const total = accumulated + totalFingers;
+              if (accumulated > 0) {
+                document.getElementById('savedNum').textContent =
+                  accumulated + '+' + totalFingers + '=' + total;
+              }
+              submitAnswer(total);
+              accumulated = 0;
+              document.getElementById('firstNumberBanner').className = 'first-number-banner';
+              holdStartFrame = null;
+              holdLevel = null;
+              fingerHistory = [];
+            }
+          }
+        } else {
+          holdStartFrame = null;
+          holdLevel = null;
+        }
+
+        document.getElementById('liveNum').textContent = totalFingers;
+        if (fingerHistory.length > 0) {
+          document.getElementById('confirmedNum').textContent =
+            fingerHistory[fingerHistory.length - 1];
+        }
+
+        // Short fist progress bar (shows whenever a fist is being held to save 10)
+        if (!answered && isFist && fistCount > 0) {
+          const fistProgress = p.map(fistCount, 0, FIST_THRESHOLD, 0, p.width);
+          p.noStroke();
+          p.fill(6, 214, 160, 180);
+          p.rect(0, p.height - 8, fistProgress, 8, 4);
+        }
+
+        // Big hold-to-confirm progress ring around the hand
+        if (!answered && holdStartFrame !== null && holdLevel !== null && holdLevel > 0 && hands.length > 0) {
+          const heldFrames = p.frameCount - holdStartFrame;
+          const holdPct = p.constrain(heldFrames / HOLD_FRAMES, 0, 1);
+
+          const palm = hands[0].keypoints[0];
+          const cx = palm.x;
+          const cy = palm.y;
+          const radius = 80;
+
+          p.noFill();
+          p.stroke(255, 255, 255, 60);
+          p.strokeWeight(6);
+          p.circle(cx, cy, radius * 2);
+
+          p.stroke(255, 209, 102);
+          p.strokeWeight(8);
+          p.arc(cx, cy, radius * 2, radius * 2, -p.HALF_PI, -p.HALF_PI + p.TWO_PI * holdPct);
+
+          p.noStroke();
+          p.fill(0, 0, 0, 180);
+          p.circle(cx, cy, 56);
+          p.fill(255, 209, 102);
+          p.textAlign(p.CENTER, p.CENTER);
+          p.textSize(28);
+          p.textStyle(p.BOLD);
+          const secondsLeft = Math.max(1, Math.ceil((HOLD_FRAMES - heldFrames) / 30));
+          p.text(secondsLeft, cx, cy);
+          p.textStyle(p.NORMAL);
+        }
+      };
+    });
+
+    loadQuestion();
+  }
+</script>
+
+</body>
+</html>
