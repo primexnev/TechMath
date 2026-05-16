@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TechMath — Math Adventure</title>
+  <title>Draw &amp; Solve — Math Adventure</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
   <script src="https://unpkg.com/ml5@1.2.1/dist/ml5.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
@@ -18,9 +18,11 @@
       color: #fff;
     }
 
+    /* ===== SCREEN SYSTEM ===== */
     .screen { display: none; min-height: 100vh; width: 100%; }
     .screen.active { display: flex; }
 
+    /* ===== SHARED BACK BUTTON ===== */
     .back-btn {
       position: fixed;
       top: 20px;
@@ -46,6 +48,9 @@
       transform: translateX(-2px);
     }
 
+    /* ============================================== */
+    /* ============== MAIN MENU ===================== */
+    /* ============================================== */
     #menu-screen {
       flex-direction: column;
       align-items: center;
@@ -274,6 +279,9 @@
       .menu-header { margin-bottom: 40px; }
     }
 
+    /* ============================================== */
+    /* ============== SQUEEZE GAME ================== */
+    /* ============================================== */
     #squeeze-screen {
       background: #1a0533;
       flex-direction: column;
@@ -281,6 +289,9 @@
     }
     #squeeze-screen canvas { display: block; }
 
+    /* ============================================== */
+    /* ============== FINGER GAME =================== */
+    /* ============================================== */
     #finger-screen {
       background: #1a1a2e;
       flex-direction: column;
@@ -780,12 +791,15 @@
 </head>
 <body>
 
+<!-- ============================================ -->
+<!-- =========== MAIN MENU SCREEN =============== -->
+<!-- ============================================ -->
 <div id="menu-screen" class="screen active">
   <div class="bg-orb orb1"></div>
   <div class="bg-orb orb2"></div>
 
   <div class="menu-header">
-    <h1 class="menu-title">TechMath</h1>
+    <h1 class="menu-title">Draw &amp; Solve</h1>
     <div class="menu-subtitle">Math Adventure</div>
   </div>
 
@@ -822,11 +836,17 @@
   <div class="menu-footer">HSLU · Interaction Design Project</div>
 </div>
 
+<!-- ============================================ -->
+<!-- =========== SQUEEZE GAME SCREEN ============ -->
+<!-- ============================================ -->
 <div id="squeeze-screen" class="screen">
   <button class="back-btn" onclick="showScreen('menu')">← Menu</button>
   <div id="squeeze-canvas-holder"></div>
 </div>
 
+<!-- ============================================ -->
+<!-- =========== FINGER GAME SCREEN ============= -->
+<!-- ============================================ -->
 <div id="finger-screen" class="screen">
   <button class="back-btn" onclick="showScreen('menu')">← Menu</button>
 
@@ -915,6 +935,10 @@
     </div>
   </div>
 </div>
+
+<!-- ============================================== -->
+<!-- =========== SCREEN ROUTER =================== -->
+<!-- ============================================== -->
 <script>
   let squeezeStarted = false;
   let fingerStarted = false;
@@ -967,6 +991,7 @@
   function clearStage() { tutorialStage().innerHTML = ''; }
   function addToStage(html) { tutorialStage().innerHTML += html; }
 
+  // Sequential animation helper — runs steps with delays
   function runSequence(steps) {
     let totalDelay = 0;
     steps.forEach(([delay, fn]) => {
@@ -980,6 +1005,7 @@
     tutorialNextBtn().style.display = 'none';
 
     if (step === 0) {
+      // ── STEP 1: Single-digit example (2 + 3 = 5) ──
       setStepDots(1);
       tutorialTitle().textContent = 'Single-digit answers';
       tutorialSubtitle().textContent = 'Show the number → hold steady';
@@ -1020,6 +1046,7 @@
       ]);
 
     } else if (step === 1) {
+      // ── STEP 2: Two-digit example (7 + 5 = 12) ──
       setStepDots(2);
       tutorialTitle().textContent = 'Numbers bigger than 10';
       tutorialSubtitle().textContent = 'Show 10 → fist ✊ → remaining → hold';
@@ -1104,8 +1131,12 @@
   }
 </script>
 
+<!-- ============================================== -->
+<!-- =========== SQUEEZE GAME LOGIC ============== -->
+<!-- ============================================== -->
 <script>
 function initSqueezeGame() {
+  // Math Pressure Game — built with p5.js (instance mode so it doesn't conflict with Finger game)
   const QUESTIONS = [
     { a: 2, op: '+', b: 2 },
     { a: 3, op: '+', b: 1 },
@@ -1162,6 +1193,7 @@ function initSqueezeGame() {
     };
 
     p.draw = function() {
+      // Only render if squeeze screen is visible (saves CPU when on other screens)
       if (!document.getElementById('squeeze-screen').classList.contains('active')) {
         if (connectBtn) connectBtn.hide();
         return;
@@ -1482,7 +1514,11 @@ function initSqueezeGame() {
   });
 }
 </script>
-  <script>
+
+<!-- ============================================== -->
+<!-- =========== FINGER GAME LOGIC =============== -->
+<!-- ============================================== -->
+<script>
   let currentQ = 0;
   let score = 0;
   let streak = 0;
@@ -1610,6 +1646,7 @@ function initSqueezeGame() {
       red.className   = 'indicator idle';
     }, 2000);
 
+    // Auto-advance to next question after 3 seconds with countdown
     let secondsLeft = 3;
     const countdownEl = document.getElementById('countdownText');
     countdownEl.textContent = `Next question in ${secondsLeft}...`;
@@ -1644,13 +1681,14 @@ function initSqueezeGame() {
       let fistCount = 0;
       const FIST_THRESHOLD = 10;
 
-      let accumulated = 0;
-      let graceUntilFrame = 0;
-      const GRACE_FRAMES = 60;
+      let accumulated = 0;        // sum of all "10"s saved via fist
+      let graceUntilFrame = 0;    // ignore hold-detection until this frame (after a fist)
+      const GRACE_FRAMES = 60;    // ~2 seconds at 30fps
 
+      // Hold-to-confirm state (3 second hold on last number)
       let holdStartFrame = null;
       let holdLevel = null;
-      const HOLD_FRAMES = 150;
+      const HOLD_FRAMES = 150; // ~5 seconds at 30fps
 
       window.resetSketch = function() {
         accumulated    = 0;
@@ -1696,6 +1734,7 @@ function initSqueezeGame() {
       }
 
       p.draw = function() {
+        // Skip rendering when finger screen is hidden (saves CPU)
         if (!document.getElementById('finger-screen').classList.contains('active')) return;
 
         p.image(video, 0, 0);
@@ -1721,10 +1760,13 @@ function initSqueezeGame() {
         if (isFist) { fistCount++; } else { fistCount = 0; }
 
         // ── FIST: each fist with 10 fingers shown adds 10 to accumulated ──
+        // Can be done multiple times (e.g. for answer 20: 10+fist, 10+fist, then hold final number)
+        // Blocked once an answer has been submitted for this question.
         if (!answered && fistCount === FIST_THRESHOLD && fingerHistory.length > 0) {
           const idx        = Math.max(0, fingerHistory.length - 15);
           const savedValue = fingerHistory[idx];
 
+          // Only accept the fist if user was showing exactly 10 fingers
           if (savedValue === 10) {
             accumulated += 10;
             document.getElementById('savedNum').textContent = accumulated;
@@ -1735,17 +1777,21 @@ function initSqueezeGame() {
             fingerHistory = [];
             holdStartFrame = null;
             holdLevel = null;
+            // Give the user a moment to reposition their hand before the hold counter kicks in
             graceUntilFrame = p.frameCount + GRACE_FRAMES;
           }
         }
 
-        // ── HOLD-TO-CONFIRM: final answer submission (5 seconds steady) ──
+        // ── HOLD-TO-CONFIRM: final answer submission (3 seconds steady) ──
+        // Skip if answer already submitted OR we're in the post-fist grace period.
         const inGracePeriod = p.frameCount < graceUntilFrame;
         if (!answered && !inGracePeriod && !isFist && hands.length > 0 && totalFingers > 0) {
           if (totalFingers !== holdLevel) {
+            // User changed the number — reset the hold timer
             holdLevel = totalFingers;
             holdStartFrame = p.frameCount;
           } else {
+            // Same number — check if held long enough
             if (p.frameCount - holdStartFrame >= HOLD_FRAMES) {
               const total = accumulated + totalFingers;
               if (accumulated > 0) {
@@ -1761,6 +1807,7 @@ function initSqueezeGame() {
             }
           }
         } else {
+          // No hand, fist, answered, or in grace period — reset hold
           holdStartFrame = null;
           holdLevel = null;
         }
@@ -1784,20 +1831,24 @@ function initSqueezeGame() {
           const heldFrames = p.frameCount - holdStartFrame;
           const holdPct = p.constrain(heldFrames / HOLD_FRAMES, 0, 1);
 
+          // Find approximate hand center from keypoints
           const palm = hands[0].keypoints[0];
           const cx = palm.x;
           const cy = palm.y;
           const radius = 80;
 
+          // Background circle (translucent)
           p.noFill();
           p.stroke(255, 255, 255, 60);
           p.strokeWeight(6);
           p.circle(cx, cy, radius * 2);
 
+          // Progress arc (gold)
           p.stroke(255, 209, 102);
           p.strokeWeight(8);
           p.arc(cx, cy, radius * 2, radius * 2, -p.HALF_PI, -p.HALF_PI + p.TWO_PI * holdPct);
 
+          // Countdown number in center
           p.noStroke();
           p.fill(0, 0, 0, 180);
           p.circle(cx, cy, 56);
