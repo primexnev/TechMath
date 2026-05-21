@@ -833,8 +833,6 @@ function initSqueezeGame() {
       p.noStroke(); p.fill(280, 60, 60, 15); p.ellipse(cx, cy, 440, 80);
       p.fill(0, 0, 100); p.textAlign(p.CENTER, p.CENTER); p.textSize(64);
       p.text(`${q.a} ${q.op} ${q.b} = ?`, cx, cy);
-      p.fill(0, 0, 60); p.textSize(14);
-      p.text(`Keep pressing until you reach ${ans}`, cx, cy + 48);
     }
 
     function drawCentralOrb(pct, level, ans) {
