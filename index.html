@@ -8,8 +8,13 @@
   <script src="https://unpkg.com/ml5@1.2.1/dist/ml5.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
+    /* ── Global reset & base ─────────────────────────────────────
+       Strip all default browser margins/padding and use border-box
+       so padding never makes elements wider than expected.        */
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    /* Deep purple base — all screens sit on top of this.
+       overflow-x hidden stops horizontal scrollbars on mobile.   */
     body {
       background: #1a0533;
       font-family: 'Nunito', sans-serif;
@@ -18,9 +23,15 @@
       color: #fff;
     }
 
+    /* ── Screen switching ────────────────────────────────────────
+       Every screen is hidden by default. Adding .active makes it
+       visible as a flex container so its children can lay out.   */
     .screen { display: none; min-height: 100vh; width: 100%; }
     .screen.active { display: flex; }
 
+    /* ── Back button (shared across all game screens) ────────────
+       Fixed so it stays in the corner even when content scrolls.
+       Glass effect via semi-transparent background + backdrop blur. */
     .back-btn {
       position: fixed;
       top: 20px; left: 20px;
@@ -37,12 +48,20 @@
       display: inline-flex; align-items: center; gap: 6px;
       transition: all 0.2s ease;
     }
+    /* Nudges slightly left on hover to feel interactive */
     .back-btn:hover { background: rgba(255,255,255,0.2); transform: translateX(-2px); }
 
+    /* ── Menu screen layout ──────────────────────────────────────
+       Centred column. overflow hidden so the animated orbs don't
+       create scrollbars when they drift near the edges.           */
     #menu-screen {
       flex-direction: column; align-items: center; justify-content: center;
       position: relative; overflow: hidden;
     }
+
+    /* Subtle star-field dots layered behind everything using a
+       repeating radial-gradient pattern. pointer-events none so
+       it doesn't block clicks. Fades in and out with @twinkle.   */
     #menu-screen::before {
       content: '';
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -54,15 +73,20 @@
     }
     @keyframes twinkle { 0%, 100% { opacity: 0.08; } 50% { opacity: 0.15; } }
 
+    /* ── Background orbs (menu screen) ──────────────────────────
+       Large blurred circles positioned off-screen edges so only
+       their glow bleeds into the visible area.                    */
     .bg-orb {
       position: fixed; border-radius: 50%; filter: blur(80px);
       opacity: 0.4; z-index: 0; pointer-events: none;
     }
+    /* Purple orb drifts from top-left */
     .bg-orb.orb1 {
       width: 400px; height: 400px; background: #b44fff;
       top: -100px; left: -100px;
       animation: float 12s ease-in-out infinite;
     }
+    /* Yellow orb drifts from bottom-right in the opposite direction */
     .bg-orb.orb2 {
       width: 350px; height: 350px; background: #FFD166;
       bottom: -100px; right: -100px;
@@ -70,6 +94,10 @@
     }
     @keyframes float { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(50px,-50px); } }
 
+    /* ── Menu title & subtitle ───────────────────────────────────
+       clamp() keeps the title readable on small screens without a
+       media query. The gradient text trick clips the gradient to
+       the text shape using background-clip.                       */
     .menu-header { text-align: center; margin-bottom: 60px; z-index: 10; position: relative; }
     .menu-title {
       font-family: 'Fredoka One', cursive;
@@ -85,11 +113,18 @@
       font-weight: 600; letter-spacing: 4px; text-transform: uppercase;
     }
 
+    /* ── Mode cards container ────────────────────────────────────
+       flex-wrap lets the two cards stack vertically on narrow screens
+       before the explicit mobile breakpoint kicks in.             */
     .modes-container {
       display: flex; gap: 32px; flex-wrap: wrap; justify-content: center;
       z-index: 10; position: relative; padding: 0 20px;
     }
 
+    /* ── Individual mode card ────────────────────────────────────
+       Glass-morphism style: very transparent background + blur.
+       overflow hidden is needed so the ::before glow doesn't leak
+       outside the rounded corners.                                */
     .mode-card {
       width: 320px; min-height: 380px;
       background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.12);
@@ -100,17 +135,21 @@
       align-items: center; justify-content: space-between;
       position: relative; overflow: hidden;
     }
+    /* Hidden colour glow that fades in on hover — each card gets
+       its own theme colour (purple for Squeeze, yellow for Finger) */
     .mode-card::before {
       content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       opacity: 0; transition: opacity 0.4s ease; z-index: -1;
     }
     .mode-card.squeeze::before { background: radial-gradient(circle at top, rgba(180,79,255,0.25), transparent 70%); }
     .mode-card.finger::before  { background: radial-gradient(circle at top, rgba(255,209,102,0.25), transparent 70%); }
+    /* Lifts and glows on hover; border also switches to the card's theme colour */
     .mode-card:hover { transform: translateY(-8px) scale(1.02); border-color: rgba(255,255,255,0.3); box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
     .mode-card:hover::before { opacity: 1; }
     .mode-card.squeeze:hover { border-color: #b44fff; box-shadow: 0 20px 60px rgba(180,79,255,0.3); }
     .mode-card.finger:hover  { border-color: #FFD166; box-shadow: 0 20px 60px rgba(255,209,102,0.3); }
 
+    /* Emoji tilts slightly on card hover for a playful feel */
     .mode-emoji { font-size: 5rem; margin-bottom: 20px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4)); transition: transform 0.4s ease; }
     .mode-card:hover .mode-emoji { transform: scale(1.15) rotate(-5deg); }
 
@@ -120,6 +159,7 @@
 
     .mode-desc { font-size: 0.95rem; color: rgba(255,255,255,0.7); line-height: 1.5; margin-bottom: 20px; }
 
+    /* Small pill badge (e.g. "Hardware Mode") above the card name */
     .mode-tag {
       display: inline-block; padding: 6px 14px; border-radius: 50px;
       font-size: 0.75rem; font-weight: 800; letter-spacing: 1px;
@@ -128,6 +168,7 @@
     .mode-card.squeeze .mode-tag { background: rgba(180,79,255,0.2); color: #d896ff; border: 1px solid rgba(180,79,255,0.4); }
     .mode-card.finger  .mode-tag { background: rgba(255,209,102,0.2); color: #FFD166; border: 1px solid rgba(255,209,102,0.4); }
 
+    /* Play button at the bottom of each card */
     .play-btn {
       padding: 12px 32px; border-radius: 50px;
       font-family: 'Fredoka One', cursive; font-size: 1.1rem;
@@ -136,20 +177,31 @@
     .mode-card.squeeze .play-btn { background: linear-gradient(135deg,#b44fff,#8a2be2); color: #fff; box-shadow: 0 6px 20px rgba(180,79,255,0.4); }
     .mode-card.finger  .play-btn { background: linear-gradient(135deg,#FFD166,#ff9f1c); color: #1a0533; box-shadow: 0 6px 20px rgba(255,209,102,0.4); }
 
+    /* Small credit line pinned to the bottom of the page */
     .menu-footer {
       position: fixed; bottom: 20px; left: 0; width: 100%;
       text-align: center; color: rgba(255,255,255,0.3); font-size: 0.85rem; z-index: 10;
     }
 
+    /* ── Mobile layout (≤ 720px) ─────────────────────────────────
+       Stack the cards vertically and reduce the header gap so
+       everything fits without scrolling on phone screens.         */
     @media (max-width: 720px) {
       .modes-container { flex-direction: column; align-items: center; }
       .mode-card { width: 90%; max-width: 380px; min-height: auto; }
       .menu-header { margin-bottom: 40px; }
     }
 
+    /* ── Squeeze It screen ───────────────────────────────────────
+       The p5 canvas fills the whole screen; display:block removes
+       the small gap browsers add under inline canvas elements.    */
     #squeeze-screen { background: #1a0533; flex-direction: column; position: relative; }
     #squeeze-screen canvas { display: block; }
 
+    /* ── Finger Math screen ──────────────────────────────────────
+       Slightly different dark blue so it feels like a separate space.
+       The ::before dot pattern is the same star-field as the menu
+       but at lower opacity (0.05 vs 0.08) so it stays subtle.    */
     #finger-screen { background: #1a1a2e; flex-direction: column; align-items: center; justify-content: flex-start; }
     #finger-screen::before {
       content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -159,28 +211,39 @@
       opacity: 0.05; pointer-events: none; z-index: 0;
     }
 
+    /* ── Finger Math header bar ──────────────────────────────────
+       Left padding of 140px leaves space for the fixed back button
+       so the logo doesn't sit underneath it.                      */
     .finger-header {
       width: 100%; padding: 20px 40px 20px 140px;
       display: flex; align-items: center; justify-content: space-between;
       z-index: 10; position: relative;
     }
     .finger-logo { font-family: 'Fredoka One', cursive; font-size: 2rem; color: #fff; letter-spacing: 1px; }
-    .finger-logo span { color: #FFD166; }
+    .finger-logo span { color: #FFD166; } /* "Math" part highlighted yellow */
 
+    /* Pill showing the current score in the top-right of the header */
     .score-badge {
       background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2);
       border-radius: 50px; padding: 8px 20px; color: #fff; font-size: 1rem; font-weight: 800;
     }
     .score-badge span { color: #FFD166; }
 
+    /* ── Finger Math main layout ─────────────────────────────────
+       Three-column flex: left side-panel (indicator lights),
+       centre panel (question + webcam), right panel (instructions). */
     .finger-main {
       display: flex; gap: 28px; align-items: flex-start; justify-content: center;
       width: 100%; max-width: 1400px; padding: 0 20px 40px;
       z-index: 10; position: relative;
     }
 
+    /* Left column holding the green/red indicator circles */
     .side-panel { display: flex; flex-direction: column; gap: 16px; padding-top: 60px; }
 
+    /* ── Correct / wrong indicator lights ────────────────────────
+       Circular lights that flash green or red after an answer.
+       The double box-shadow creates a close glow + a wider ambient glow. */
     .indicator {
       width: 90px; height: 90px; border-radius: 50%;
       border: 3px solid rgba(255,255,255,0.2); transition: all 0.4s ease;
@@ -196,16 +259,22 @@
       box-shadow: 0 0 30px #EF233C, 0 0 60px rgba(239,35,60,0.4);
       animation: pulse-red 1s ease-in-out;
     }
-    .indicator.idle { background: rgba(255,255,255,0.05); }
+    .indicator.idle { background: rgba(255,255,255,0.05); } /* off state */
 
+    /* Green just scales up and back — a single calm pulse */
     @keyframes pulse-green { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    /* Red shakes slightly — feels more urgent/alarming than green */
     @keyframes pulse-red {
       0% { transform: scale(1); } 25% { transform: scale(1.1); }
       50% { transform: scale(0.95); } 75% { transform: scale(1.1); } 100% { transform: scale(1); }
     }
 
+    /* Centre column: question card + webcam canvas + status bar stacked */
     .center-panel { display: flex; flex-direction: column; align-items: center; gap: 16px; }
 
+    /* ── Question card ───────────────────────────────────────────
+       Frosted glass box showing the math problem. Border colour
+       changes to green or red after the answer is submitted.      */
     .question-card {
       background: rgba(255,255,255,0.07); border: 2px solid rgba(255,255,255,0.12);
       border-radius: 28px; padding: 32px 60px; text-align: center;
@@ -216,8 +285,12 @@
     .question-card.correct { border-color: #06D6A0; background: rgba(6,214,160,0.1); }
     .question-card.wrong   { border-color: #EF233C; background: rgba(239,35,60,0.1); }
 
+    /* Wrapper clips the webcam canvas to rounded corners */
     .canvas-wrapper { border-radius: 20px; overflow: hidden; border: 2px solid rgba(255,255,255,0.1); position: relative; }
 
+    /* ── Live answer overlay (on top of the webcam feed) ─────────
+       Shows "Live / Last / Saved" finger counts in real time.
+       pointer-events none so it doesn't block hand detection.     */
     .answer-overlay {
       position: absolute; top: 14px; left: 14px;
       background: rgba(0,0,0,0.6); border-radius: 14px; padding: 10px 20px;
@@ -226,8 +299,12 @@
     }
     .answer-overlay .confirmed { color: #FFD166; }
 
+    /* Right column: step-by-step instruction cards */
     .right-panel { display: flex; flex-direction: column; gap: 14px; padding-top: 10px; min-width: 240px; }
 
+    /* ── Instruction cards ───────────────────────────────────────
+       The .active state highlights the card for the current step
+       with a yellow border and tinted background.                 */
     .instruction-card {
       background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
       border-radius: 18px; padding: 16px 20px; color: rgba(255,255,255,0.8);
@@ -236,14 +313,19 @@
     .instruction-card .step { font-family: 'Fredoka One', cursive; font-size: 1.25rem; color: #FFD166; margin-bottom: 6px; }
     .instruction-card.active { border-color: #FFD166; background: rgba(255,209,102,0.1); }
 
+    /* Pill bar below the webcam showing difficulty, streak, and instructions */
     .status-bar {
       background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
       border-radius: 50px; padding: 12px 30px; color: #fff;
       font-size: 1rem; font-weight: 600; text-align: center; width: 100%; margin-top: 6px;
     }
-    .status-bar .live  { color: #06D6A0; }
-    .status-bar .saved { color: #FFD166; }
+    .status-bar .live  { color: #06D6A0; } /* "fingers" keyword — green */
+    .status-bar .saved { color: #FFD166; } /* "hold 5s" keyword — yellow */
 
+    /* ── Answer feedback overlay ─────────────────────────────────
+       Full-screen overlay that fades in after each answer.
+       Starts invisible and non-interactive; .show makes it visible.
+       The inner box scales from 0.8 → 1 for a pop-in effect.     */
     .feedback-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       display: flex; align-items: center; justify-content: center;
@@ -262,11 +344,13 @@
     .feedback-result { font-family: 'Fredoka One', cursive; font-size: 2.5rem; margin-bottom: 8px; }
     .feedback-sub    { color: rgba(255,255,255,0.6); font-size: 1rem; }
 
+    /* Border and result text colour switch based on correct/wrong modifier class */
     .feedback-overlay.correct-fb .feedback-box   { border-color: #06D6A0; }
     .feedback-overlay.correct-fb .feedback-result { color: #06D6A0; }
     .feedback-overlay.wrong-fb   .feedback-box   { border-color: #EF233C; }
     .feedback-overlay.wrong-fb   .feedback-result { color: #EF233C; }
 
+    /* "Next question in 3..." text pulses so the player notices the countdown */
     .countdown-text {
       color: rgba(255,255,255,0.5); font-size: 0.95rem; font-weight: 600;
       margin-top: 20px; letter-spacing: 1px;
@@ -274,12 +358,19 @@
     }
     @keyframes countdown-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
+    /* ── Progress dots ───────────────────────────────────────────
+       Row of 10 dots showing the last 10 question results.
+       Current question is yellow and slightly enlarged.           */
     .progress-dots { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
     .dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: all 0.3s ease; }
-    .dot.done      { background: #06D6A0; }
-    .dot.wrong-dot { background: #EF233C; }
-    .dot.current   { background: #FFD166; transform: scale(1.3); }
+    .dot.done      { background: #06D6A0; } /* correct answer */
+    .dot.wrong-dot { background: #EF233C; } /* wrong answer */
+    .dot.current   { background: #FFD166; transform: scale(1.3); } /* question in progress */
 
+    /* ── Finger Math HTML tutorial overlay ───────────────────────
+       Sits above everything (z-index 200) and blocks interaction
+       while visible. backdrop-filter blurs the game behind it.
+       Starts hidden via opacity 0 + pointer-events none.          */
     .tutorial-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
@@ -288,6 +379,8 @@
     }
     .tutorial-overlay.show { opacity: 1; pointer-events: all; }
 
+    /* The tutorial card pops in from scale(0.85) → scale(1) using
+       a spring-like cubic-bezier that gives a slight overshoot.   */
     .tutorial-card {
       background: linear-gradient(135deg,#2a1a4e,#1a1a2e);
       border: 2px solid rgba(255,209,102,0.3); border-radius: 32px;
@@ -301,17 +394,20 @@
     .tutorial-title    { font-family: 'Fredoka One', cursive; font-size: 2.2rem; color: #FFD166; margin-bottom: 6px; }
     .tutorial-subtitle { color: rgba(255,255,255,0.6); font-size: 1rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 24px; }
 
+    /* Area where the animated demo stages (hand emojis, rings, etc.) are injected by JS */
     .tutorial-stage {
       min-height: 280px; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 18px; margin-bottom: 24px;
     }
 
+    /* Mini question display inside the tutorial demo */
     .tutorial-question {
       background: rgba(255,255,255,0.08); border-radius: 18px;
       padding: 16px 32px; font-family: 'Fredoka One', cursive;
       font-size: 2rem; color: #FFD166;
     }
 
+    /* Large hand emoji used in tutorial demos — .pop triggers the scale-in animation */
     .tutorial-hand {
       font-size: 7rem;
       filter: drop-shadow(0 4px 20px rgba(255,209,102,0.4));
@@ -320,6 +416,7 @@
     .tutorial-hand.pop { animation: hand-pop 0.4s ease-out; }
     @keyframes hand-pop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
 
+    /* Hint text shown below each tutorial stage */
     .tutorial-hint {
       color: #fff;
       font-size: 1.4rem;
@@ -329,6 +426,10 @@
       text-shadow: 0 2px 8px rgba(0,0,0,0.5);
     }
 
+    /* ── Tutorial countdown ring ─────────────────────────────────
+       Animated circular progress ring used to show "hold steady".
+       The ::before pseudo-element is the yellow arc — it spins
+       from -90° to 270° over 2.5 seconds to simulate filling up. */
     .tutorial-ring {
       width: 140px; height: 140px; border-radius: 50%;
       border: 6px solid rgba(255,255,255,0.15);
@@ -347,9 +448,11 @@
     }
     .tutorial-ring-number { font-family: 'Fredoka One', cursive; font-size: 3rem; color: #FFD166; }
 
+    /* Green checkmark that pops in when the tutorial demo shows a correct answer */
     .tutorial-check { font-size: 5rem; color: #06D6A0; animation: check-pop 0.5s ease-out; }
     @keyframes check-pop { 0% { transform: scale(0); } 60% { transform: scale(1.3); } 100% { transform: scale(1); } }
 
+    /* Yellow badge shown in the tutorial when "10" is saved (reuses hand-pop animation) */
     .tutorial-saved-badge {
       background: linear-gradient(135deg,#FFD166,#ff9f1c); color: #1a1a2e;
       border-radius: 14px; padding: 10px 22px;
@@ -357,13 +460,16 @@
       animation: hand-pop 0.4s ease-out;
     }
 
+    /* Step progress dots inside the tutorial card (one per lesson step) */
     .tutorial-step-dots { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
     .tutorial-step-dot  { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: all 0.3s ease; }
     .tutorial-step-dot.active { background: #FFD166; transform: scale(1.3); }
     .tutorial-step-dot.done   { background: #06D6A0; }
 
+    /* Row of buttons at the bottom of the tutorial card (Skip / Next) */
     .tutorial-buttons { display: flex; gap: 12px; justify-content: center; }
 
+    /* Primary = yellow gradient (main action); secondary = ghost style (skip) */
     .tutorial-btn {
       padding: 12px 28px; border-radius: 50px;
       font-family: 'Fredoka One', cursive; font-size: 1.05rem;
@@ -374,6 +480,10 @@
     .tutorial-btn.secondary { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
     .tutorial-btn.secondary:hover { background: rgba(255,255,255,0.18); }
 
+    /* ── "Saved: 10 + ?" banner (Finger Math) ────────────────────
+       Appears below the question card when the player banks a 10.
+       Hidden by default (display:none); JS adds .show to reveal it.
+       The banner-pop animation gives it a satisfying scale-in entry. */
     .first-number-banner {
       background: linear-gradient(135deg,#FFD166,#ff9f1c); color: #1a1a2e;
       border-radius: 18px; padding: 14px 30px;
@@ -489,17 +599,20 @@
       </div>
       <div class="tutorial-stage" id="tutorialStage"></div>
       <div class="tutorial-buttons">
-        <button class="tutorial-btn secondary" onclick="skipTutorial()">Skip</button>
+        <button class="tutorial-btn secondary" onclick="endTutorial()">Skip</button>
         <button class="tutorial-btn primary" id="tutorialNextBtn" onclick="nextTutorialStep()" style="display:none;">Got it! Let's play →</button>
       </div>
     </div>
   </div>
 </div>
 
+<!-- ============================================================
+     SHARED — Screen navigation
+     ============================================================ -->
 <script>
   let squeezeStarted = false;
-  let fingerStarted = false;
-  let tutorialShown = false;
+  let fingerStarted  = false;
+  let tutorialShown  = false;
 
   function showScreen(name) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -511,7 +624,12 @@
       else if (!fingerStarted) { initFingerGame(); fingerStarted = true; }
     }
   }
+</script>
 
+<!-- ============================================================
+     FINGER MATH — HTML overlay tutorial (Finger Math only)
+     ============================================================ -->
+<script>
   let tutorialStep = 0;
   let substep = 0;
   let showVisual = false;
@@ -575,13 +693,11 @@
     const current = substeps[substep];
     const isLastSubstep = substep === substeps.length - 1;
     const isLastStep = tutorialStep === 1;
-
     if (showVisual) {
       tutorialStage().innerHTML = `${current.stage}<div class="tutorial-hint">${current.hint}</div>`;
     } else {
       tutorialStage().innerHTML = `<div class="tutorial-hint" style="font-size:1.6rem;">${current.hint}</div>`;
     }
-
     const btn = tutorialNextBtn();
     if (showVisual && isLastSubstep && isLastStep)      btn.textContent = "Let's play! →";
     else if (showVisual && isLastSubstep)               btn.textContent = 'Next lesson →';
@@ -606,7 +722,6 @@
     }
   }
 
-  function skipTutorial() { endTutorial(); }
 
   function endTutorial() {
     tutorialOverlay().classList.remove('show');
@@ -614,16 +729,21 @@
   }
 </script>
 
-  <script>
+<!-- ============================================================
+     SQUEEZE IT — p5.js sensor game
+     ============================================================ -->
+<script>
 function initSqueezeGame() {
+  // Builds one question for the given operator.
+  // For multiplication we use a fixed list of easy pairs so the numbers stay manageable.
   function makeQuestion(op) {
     let a, b;
     if (op === '+') {
       a = Math.floor(Math.random() * 9) + 1;
-      b = Math.floor(Math.random() * (10 - a)) + 1;
+      b = Math.floor(Math.random() * (10 - a)) + 1; // keep the sum at most 10
     } else if (op === '-') {
       a = Math.floor(Math.random() * 8) + 2;
-      b = Math.floor(Math.random() * (a - 1)) + 1;
+      b = Math.floor(Math.random() * (a - 1)) + 1;  // b is always smaller so the result stays positive
     } else {
       const pairs = [[1,2],[1,3],[1,4],[1,5],[1,6],[1,7],[1,8],[1,9],[1,10],[2,2],[2,3],[2,4],[2,5],[3,3]];
       [a, b] = pairs[Math.floor(Math.random() * pairs.length)];
@@ -631,6 +751,9 @@ function initSqueezeGame() {
     return { a, op, b };
   }
 
+  // Generates the full set of 5 questions for one round.
+  // The first 3 operators are shuffled so each round feels different.
+  // The last 2 are picked randomly, just avoiding back-to-back repeats.
   function generateQuestions() {
     const ops = ['+', '-', 'x'];
     for (let i = ops.length - 1; i > 0; i--) {
@@ -647,25 +770,43 @@ function initSqueezeGame() {
 
   let QUESTIONS = generateQuestions();
 
-  const THRESHOLD = 5, MAX_RAW = 30, TOTAL_ORBS = 10, HOLD_DURATION = 1500;
+  // Sensor thresholds and game timing
+  const THRESHOLD = 5;       // raw values below this are treated as "not squeezing"
+  const MAX_RAW = 30;        // the highest raw value we expect from the sensor
+  const TOTAL_ORBS = 10;     // how many levels the orb can show (maps to answers 1–10)
+  const HOLD_DURATION = 1500; // player must hold a level steady for this many ms to confirm
+
+  // Smoothing — EMA blends the new reading toward the old one gradually,
+  // so a single noisy spike doesn't instantly change the displayed level.
   const EMA_ALPHA = 0.15;
+
+  // Hysteresis — the level must change by MORE than this to restart the hold timer.
+  // This stops ±1 sensor wobble from constantly interrupting a steady hold.
   const HYSTERESIS = 1;
 
+  // Everything that can change during a game lives here in one place.
   let state = {
     qIndex: 0, score: 0, timeLeft: 30,
     answered: false, currentRaw: 0, smoothedRaw: 0, particles: [], rings: [],
     timerInterval: null, gameOver: false,
-    holdStart: null, holdLevel: null,
+    holdStart: null, holdLevel: null,    // track when the player started holding a level
     correct: 0, wrong: 0, unanswered: 0,
   };
 
+  // Serial / connection state
   let gameStarted = false, disconnectedMidGame = false;
   let port, reader, serialConnected = false;
+
+  // p5 UI references and background decoration
   let connectBtn, bgStars = [];
+
+  // Alien animation state
   let alienPrevPressing = false;
   let alienStage = 'idle', alienPrevStage = 'idle', alienPopT = 1;
   let imgAlienTransform1, imgAlienTransform2, imgAlienClosedEyes;
   let shakeTimer = 0;
+
+  // In-game tutorial (shown once after connecting, before the first question)
   let tutorialActive = false, tutorialMsgIndex = 0;
   const TUTORIAL_EMOJIS = ["👋", "🎯", "⏱️", "⏰", "🚀"];
   const TUTORIAL_MSGS = [
@@ -675,10 +816,13 @@ function initSqueezeGame() {
     "You have 30 seconds per question.\nPress R after game over to play again!",
     "Alright, you're all set!\nLet's squeeze some math!"
   ];
+
+  // How long the alien shakes when the player first starts squeezing, and how hard
   const SHAKE_FRAMES = 18, SHAKE_MAG = 7;
   let imgAlienIdle, imgAlienPush;
 
   new p5(function(p) {
+    // Load all alien sprite images before anything draws
     p.preload = function() {
       imgAlienIdle       = p.loadImage('AlienIdleNo.png');
       imgAlienPush       = p.loadImage('AlienPushNo.png');
@@ -690,11 +834,15 @@ function initSqueezeGame() {
     p.setup = function() {
       const cnv = p.createCanvas(p.windowWidth, p.windowHeight);
       cnv.parent('squeeze-canvas-holder');
-      p.colorMode(p.HSB, 360, 100, 100, 100);
+      p.colorMode(p.HSB, 360, 100, 100, 100); // HSB makes colour shifts (blue → yellow) much simpler
       p.textFont('monospace');
+
+      // Scatter 130 stars randomly; each gets a noise seed so they twinkle independently
       for (let i = 0; i < 130; i++) {
         bgStars.push({ x: p.random(p.width), y: p.random(p.height), r: p.random(0.5, 2.5), seed: p.random(1000) });
       }
+
+      // Create the Arduino connect button and style it to sit at the bottom of the screen
       connectBtn = p.createButton('Connect Arduino (Web Serial)');
       connectBtn.parent('squeeze-screen');
       connectBtn.position(0, p.height - 100);
@@ -712,24 +860,32 @@ function initSqueezeGame() {
       connectBtn.mousePressed(toggleConnect);
     };
 
+    // p5 calls this every frame — it's the main game loop
     p.draw = function() {
+      // If the squeeze screen isn't visible, hide the button and do nothing
       if (!document.getElementById('squeeze-screen').classList.contains('active')) {
         if (connectBtn) connectBtn.hide();
         return;
       }
       if (connectBtn) connectBtn.show();
-      p.background(270, 80, 8);
+      p.background(270, 80, 8); // deep purple background
+
+      // Show the right screen depending on the current state
       if (!gameStarted)        { drawWaitingScreen();  return; }
       if (tutorialActive)      { drawBgStars(); drawTutorialScreen(); return; }
       if (disconnectedMidGame) { drawReconnectScreen(); return; }
 
       const q   = QUESTIONS[p.min(state.qIndex, QUESTIONS.length - 1)];
       const ans = getAnswer(q);
+
+      // pct = how far the player is squeezing (0 = not at all, 1 = max)
       const pct = p.constrain((state.smoothedRaw - THRESHOLD) / (MAX_RAW - THRESHOLD), 0, 1);
+      // level = the discrete answer number the orb is currently showing (1–10)
       const level = rawToLevel(state.smoothedRaw, TOTAL_ORBS);
 
       if (state.gameOver) { drawBgStars(); drawGameOver(); return; }
 
+      // Normal gameplay — draw everything in the right order
       drawBgStars();
       drawTopBar();
       drawQuestion(q, ans);
@@ -738,10 +894,10 @@ function initSqueezeGame() {
       drawRings();
       spawnParticles(pct);
       drawAlien(pct);
-      drawDebugLabels();
       if (!state.answered) checkAnswer(level, ans);
     };
 
+    // Shown before the Arduino is connected
     function drawWaitingScreen() {
       drawBgStars();
       p.noStroke();
@@ -752,11 +908,12 @@ function initSqueezeGame() {
       p.text('Math Pressure Game', p.width / 2, p.height / 2 - 90);
       p.fill(0, 0, 65); p.textSize(18);
       p.text('Connect your Arduino to begin', p.width / 2, p.height / 2 - 38);
-      const dots = '.'.repeat((p.floor(p.frameCount / 20) % 3) + 1);
+      const dots = '.'.repeat((p.floor(p.frameCount / 20) % 3) + 1); // animated "..." dots
       p.fill(280, 60, 90, 80 + pulse * 20); p.textSize(22);
       p.text(`Waiting for connection${dots}`, p.width / 2, p.height / 2 + 20);
     }
 
+    // Shown if the Arduino disconnects while a game is already running
     function drawReconnectScreen() {
       drawBgStars();
       p.noStroke();
@@ -771,16 +928,20 @@ function initSqueezeGame() {
       p.text(`Waiting${dots}`, p.width / 2, p.height / 2 + 52);
     }
 
+    // Simple maths — returns the correct answer for a question object
     function getAnswer(q) {
       if (q.op === '+') return q.a + q.b;
       if (q.op === '-') return q.a - q.b;
       if (q.op === 'x') return q.a * q.b;
     }
 
+    // Converts the smoothed sensor reading to a whole number level (e.g. 1–10).
+    // Values below THRESHOLD snap to 0 so releasing the sensor always reads as "none".
     function rawToLevel(raw, maxLevel) {
       return p.round(p.constrain((raw - THRESHOLD) / (MAX_RAW - THRESHOLD), 0, 1) * maxLevel);
     }
 
+    // Draws all background stars; brightness flickers with Perlin noise for a twinkle effect
     function drawBgStars() {
       p.noStroke();
       for (let s of bgStars) {
@@ -789,12 +950,15 @@ function initSqueezeGame() {
       }
     }
 
+    // The three stat boxes at the top of the screen (score, question number, timer)
     function drawTopBar() {
       drawStatBox(p.width / 2 - 130, 20, 'SCORE',    state.score, 270);
       drawStatBox(p.width / 2,       20, 'QUESTION', `${state.qIndex + 1}/${QUESTIONS.length}`, 270);
+      // Timer turns red when 5 seconds or fewer remain
       drawStatBox(p.width / 2 + 130, 20, 'TIME', state.timeLeft, state.timeLeft > 5 ? 140 : 0);
     }
 
+    // Draws one labelled stat box (rounded rectangle + label text + value text)
     function drawStatBox(x, y, label, val, hue) {
       p.noStroke(); p.rectMode(p.CENTER);
       p.fill(hue, 40, 20, 80); p.rect(x, y + 28, 110, 52, 12);
@@ -803,25 +967,31 @@ function initSqueezeGame() {
       p.rectMode(p.CORNER);
     }
 
+    // Draws the big math question (e.g. "3 + 4 = ?") near the top of the screen
     function drawQuestion(q, ans) {
       const cx = p.width / 2, cy = p.height * 0.22;
-      p.noStroke(); p.fill(280, 60, 60, 15); p.ellipse(cx, cy, 440, 80);
+      p.noStroke(); p.fill(280, 60, 60, 15); p.ellipse(cx, cy, 440, 80); // subtle glow behind text
       p.fill(0, 0, 100); p.textAlign(p.CENTER, p.CENTER); p.textSize(64);
       p.text(`${q.a} ${q.op} ${q.b} = ?`, cx, cy);
     }
 
+    // The glowing ball in the centre — it grows and shifts from blue to yellow as the player squeezes harder.
+    // The outer arc shows squeeze progress; the inner arc (white) shows hold progress.
     function drawCentralOrb(pct, level, ans) {
       const cx = p.width / 2, cy = p.height / 2 + 40;
       const h = p.lerp(260, 50, pct), s = p.lerp(40, 90, pct), b = p.lerp(50, 95, pct);
-      const sz = p.lerp(80, 160, pct) + p.sin(p.frameCount * 0.08) * (pct * 10);
+      const sz = p.lerp(80, 160, pct) + p.sin(p.frameCount * 0.08) * (pct * 10); // gentle pulse
       p.noStroke();
+      // Layered glow rings — each slightly bigger and more transparent than the last
       for (let g = 5; g >= 1; g--) { p.fill(h, s, b, 8 * g * pct + 2); p.ellipse(cx, cy, sz + g * 30); }
-      p.fill(h, s * 0.8, b, 85); p.ellipse(cx, cy, sz);
-      p.fill(h, s * 0.3, 100, 70); p.ellipse(cx, cy, sz * 0.4);
+      p.fill(h, s * 0.8, b, 85); p.ellipse(cx, cy, sz);        // main orb
+      p.fill(h, s * 0.3, 100, 70); p.ellipse(cx, cy, sz * 0.4); // bright specular spot
       p.fill(0, 0, 100, 95); p.textAlign(p.CENTER, p.CENTER); p.textSize(44); p.text(level, cx, cy);
       const r = sz / 2 + 18;
+      // Thin arc showing how far the player has squeezed (0 → full circle = max pressure)
       p.noFill(); p.stroke(h, s, b, 50); p.strokeWeight(3);
       p.arc(cx, cy, r * 2, r * 2, -p.HALF_PI, -p.HALF_PI + p.TWO_PI * pct);
+      // Thick white arc showing hold progress — fills up over HOLD_DURATION ms
       if (state.holdStart !== null && !state.answered) {
         const holdPct = p.constrain((p.millis() - state.holdStart) / HOLD_DURATION, 0, 1);
         p.stroke(0, 0, 100, 90); p.strokeWeight(5);
@@ -830,6 +1000,7 @@ function initSqueezeGame() {
       p.noStroke();
     }
 
+    // Every 3 frames, spawn 2 tiny particles around the orb while the player is squeezing
     function spawnParticles(pct) {
       if (pct > 0.05 && p.frameCount % 3 === 0) {
         const cx = p.width / 2, cy = p.height / 2 + 40, h = p.lerp(260, 50, pct);
@@ -840,16 +1011,19 @@ function initSqueezeGame() {
       }
     }
 
+    // Move, fade, and draw every active particle; remove the ones that have fully faded out
     function drawParticles() {
       p.noStroke();
       for (let i = state.particles.length - 1; i >= 0; i--) {
         const pt = state.particles[i];
-        pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.08; pt.life -= 0.025;
+        pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.08; // gravity pulls them down slowly
+        pt.life -= 0.025;
         if (pt.life <= 0) { state.particles.splice(i, 1); continue; }
         p.fill(pt.hue, 70, 95, pt.life * 80); p.ellipse(pt.x, pt.y, pt.sz * pt.life);
       }
     }
 
+    // Expand and fade out each ring; remove it once it's fully transparent
     function drawRings() {
       p.noFill();
       for (let i = state.rings.length - 1; i >= 0; i--) {
@@ -861,6 +1035,8 @@ function initSqueezeGame() {
       p.noStroke();
     }
 
+    // Explodes 50 particles and 5 expanding rings from the orb when the player answers.
+    // Green burst for correct, red for wrong.
     function triggerBurst(correct) {
       const cx = p.width / 2, cy = p.height / 2 + 40, h = correct ? 140 : 0;
       for (let i = 0; i < 50; i++) {
@@ -871,27 +1047,40 @@ function initSqueezeGame() {
       for (let i = 0; i < 5; i++) state.rings.push({ x: cx, y: cy, radius: 20, life: 1.0, hue: h });
     }
 
+    // Draws Zorp the alien, with two layers of animation:
+    // 1. A short shake when the player first starts squeezing
+    // 2. Continuous vibration proportional to how hard they're squeezing
     function drawAlien(pct) {
       if (!imgAlienIdle || !imgAlienPush) return;
       const isPressing = state.currentRaw > THRESHOLD;
+
+      // Start the entry shake animation the moment squeezing begins
       if (isPressing && !alienPrevPressing) shakeTimer = SHAKE_FRAMES;
       alienPrevPressing = isPressing;
       if (shakeTimer > 0) shakeTimer--;
-      const shakeFactor = shakeTimer / SHAKE_FRAMES;
+
+      const shakeFactor = shakeTimer / SHAKE_FRAMES; // fades from 1 → 0 over SHAKE_FRAMES
       const transX = shakeTimer > 0 ? p.random(-SHAKE_MAG, SHAKE_MAG) * shakeFactor : 0;
       const transY = shakeTimer > 0 ? p.random(-SHAKE_MAG * 0.5, SHAKE_MAG * 0.5) * shakeFactor : 0;
+
+      // Ongoing squeeze vibration — stronger the harder you squeeze
       const vib = isPressing ? pct * SHAKE_MAG * 1.4 : 0;
       const vibX = vib > 0 ? p.random(-vib, vib) : 0;
       const vibY = vib > 0 ? p.random(-vib * 0.5, vib * 0.5) : 0;
+
       const cx = p.width / 2, cy = p.height * 0.22;
       const imgW = imgAlienIdle.width, imgH = imgAlienIdle.height;
       const x = cx + 370 - imgW / 2 + transX + vibX;
       const y = cy - imgH / 2 + transY + vibY;
+
       p.push();
       p.imageMode(p.CORNER);
+
+      // Whenever the alien changes stage, reset the pop animation (alienPopT goes 0 → 1)
       if (alienStage !== alienPrevStage) { alienPopT = 0; alienPrevStage = alienStage; }
       alienPopT = Math.min(1, alienPopT + 0.09);
-      const popScale = easeOutBack(alienPopT);
+      const popScale = easeOutBack(alienPopT); // bouncy scale-in effect
+
       const img   = isPressing ? imgAlienPush : stageImg(alienStage);
       const imgCX = x + imgAlienIdle.width  / 2;
       const imgCY = y + imgAlienIdle.height / 2;
@@ -900,29 +1089,22 @@ function initSqueezeGame() {
       p.pop();
     }
 
+    // Elastic overshoot curve — gives the alien a satisfying "pop" when it appears
     function easeOutBack(t) {
       const c1 = 1.70158, c3 = c1 + 1;
       return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
     }
 
+    // Returns the right alien image for the current story stage
     function stageImg(stage) {
       if (stage === 'transform1') return imgAlienTransform1;
       if (stage === 'transform2') return imgAlienTransform2;
       return imgAlienIdle;
     }
 
-    function drawDebugLabels() {
-      p.noStroke(); p.textAlign(p.LEFT, p.TOP); p.textSize(12);
-      if (serialConnected) {
-        p.fill(140, 70, 80);
-        p.text(`Arduino connected — raw: ${state.currentRaw}`, 10, 8);
-      }
-    }
-
-    function showGameOver() { state.gameOver = true; }
-
+    // Results screen — shows correct / wrong / unanswered cards and a trophy emoji based on performance
     function drawGameOver() {
-      p.fill(270, 80, 5, 85); p.noStroke(); p.rect(0, 0, p.width, p.height);
+      p.fill(270, 80, 5, 85); p.noStroke(); p.rect(0, 0, p.width, p.height); // dim overlay
       const cx = p.width / 2, cy = p.height / 2;
       const emoji = state.correct === QUESTIONS.length ? '🏆' : state.correct >= QUESTIONS.length / 2 ? '👏' : '💪';
       p.textAlign(p.CENTER, p.CENTER); p.textSize(64); p.text(emoji, cx, cy - 130);
@@ -948,6 +1130,8 @@ function initSqueezeGame() {
       else                 { p.fill(0, 70, 80);   p.text('Connect Arduino to play again', cx, cardY + cardH + 36); }
     }
 
+    // Resets state for a fresh question and (re)starts the countdown timer.
+    // On the very first question, the alien plays its intro animation before the timer starts.
     function loadQuestion() {
       state.answered = false; state.timeLeft = 10; state.currentRaw = 0; state.smoothedRaw = 0;
       state.holdStart = null; state.holdLevel = null;
@@ -961,6 +1145,8 @@ function initSqueezeGame() {
       }
     }
 
+    // Fires every second to count down the timer.
+    // If time runs out, marks the question as wrong (if the sensor was touched) or unanswered.
     function tick() {
       state.timeLeft--;
       if (state.timeLeft <= 0 && !state.answered) {
@@ -973,9 +1159,13 @@ function initSqueezeGame() {
       }
     }
 
+    // Called every frame while the question is still open.
+    // Starts/resets the hold timer when the level changes enough (>= HYSTERESIS),
+    // and locks in the answer once the player holds steady for HOLD_DURATION ms.
     function checkAnswer(level, ans) {
       if (state.answered) return;
       if (level > 0) {
+        // A change of 1 or more restarts the hold timer — keeps accidental wobbles from counting
         if (state.holdLevel === null || Math.abs(level - state.holdLevel) >= HYSTERESIS) { state.holdStart = p.millis(); state.holdLevel = level; }
         if (p.millis() - state.holdStart >= HOLD_DURATION) {
           state.answered = true;
@@ -985,16 +1175,19 @@ function initSqueezeGame() {
           setTimeout(nextQuestion, 1400);
         }
       } else {
+        // Player released the sensor — reset everything so they can try again
         state.holdStart = null; state.holdLevel = null;
       }
     }
 
+    // Move to the next question, or show the game-over screen if that was the last one
     function nextQuestion() {
       state.qIndex++;
-      if (state.qIndex >= QUESTIONS.length) showGameOver();
+      if (state.qIndex >= QUESTIONS.length) state.gameOver = true;
       else loadQuestion();
     }
 
+    // R key restarts the game — only works on the game-over screen with Arduino connected
     p.keyPressed = function() {
       if ((p.key === 'r' || p.key === 'R') && state.gameOver && gameStarted && serialConnected) {
         QUESTIONS = generateQuestions();
@@ -1006,6 +1199,7 @@ function initSqueezeGame() {
       }
     };
 
+    // Handle clicks during the in-game tutorial — advances messages or skips via the skip button
     p.mousePressed = function() {
       if (!tutorialActive) return;
       const skipW = 140, skipH = 50;
@@ -1017,6 +1211,8 @@ function initSqueezeGame() {
       if (tutorialMsgIndex >= TUTORIAL_MSGS.length) { tutorialActive = false; loadQuestion(); }
     };
 
+    // Draws the in-game "How to Play" tutorial screen (shown after first connecting).
+    // The alien stands on the left; a speech bubble with emoji + message appears to its right.
     function drawTutorialScreen() {
       p.textFont('Fredoka One');
       p.textAlign(p.CENTER, p.CENTER);
@@ -1033,38 +1229,56 @@ function initSqueezeGame() {
       const bh  = 320;
       const by  = alienCY - bh / 2;
       const bcx = bx + bw / 2;
+
+      // Blink the alien's eyes every ~2.2 seconds (eyes close for the last 180ms of the cycle)
       const blinkCycle = p.millis() % 2200;
       const isBlinking = imgAlienClosedEyes && blinkCycle > 2020;
       const tutAlienImg = isBlinking ? imgAlienClosedEyes : imgAlienIdle;
       p.imageMode(p.CORNER);
       p.image(tutAlienImg, alienCX - imgW / 2, alienCY - imgH / 2);
+
+      // Soft pulsing purple glow around the speech bubble
       const pulse = p.sin(p.frameCount * 0.07) * 0.5 + 0.5;
       p.noStroke(); p.fill(280, 70, 60, 8 + pulse * 8);
       p.rect(bx - 6, by - 6, bw + 12, bh + 12, 30);
+
+      // Triangle "tail" that points from the bubble toward the alien
       p.fill(0, 0, 14); p.noStroke();
       p.triangle(bx - tailLen, alienCY, bx, alienCY - 20, bx, alienCY + 20);
+
+      // Main bubble box with purple border
       p.fill(0, 0, 14); p.stroke(280, 65, 80); p.strokeWeight(2.5);
       p.rect(bx, by, bw, bh, 24);
       p.noStroke();
+
+      // Large emoji at the top of the bubble
       p.textFont('monospace'); p.textSize(60);
       p.textAlign(p.CENTER, p.TOP);
       p.text(TUTORIAL_EMOJIS[tutorialMsgIndex], bcx, by + 28);
+
+      // Message text below the emoji
       p.textFont('Fredoka One'); p.fill(0, 0, 96); p.textSize(22);
       p.textLeading(32); p.textAlign(p.CENTER, p.TOP);
       p.text(TUTORIAL_MSGS[tutorialMsgIndex], bx + 32, by + 120, bw - 64);
+
+      // "Click to continue" prompt at the bottom — pulses gently to draw attention
       const isLast = tutorialMsgIndex === TUTORIAL_MSGS.length - 1;
       p.fill(280, 60, 90, 60 + pulse * 40); p.textSize(18);
       p.textAlign(p.CENTER, p.BOTTOM);
       p.text(isLast ? '▶  Click to start!' : '▶  Click to continue', bcx, by + bh - 30);
+
+      // Progress dots — one per message, filled/dimmed to show where we are
       const n = TUTORIAL_MSGS.length, dotY = by + bh + 26;
       for (let i = 0; i < n; i++) {
         const dx = bcx + (i - (n - 1) / 2) * 28;
         p.noStroke();
-        if      (i < tutorialMsgIndex)  p.fill(140, 50, 65);
-        else if (i === tutorialMsgIndex) p.fill(280, 65, 100);
-        else                             p.fill(0, 0, 30);
+        if      (i < tutorialMsgIndex)  p.fill(140, 50, 65);  // already seen — green
+        else if (i === tutorialMsgIndex) p.fill(280, 65, 100); // current — bright purple
+        else                             p.fill(0, 0, 30);     // not yet — dark grey
         p.circle(dx, dotY, 12);
       }
+
+      // Skip button in the bottom-right corner — brightens on hover
       const skipW = 140, skipH = 50;
       const skipX = p.width - skipW - 28, skipY = p.height - skipH - 24;
       const overSkip = p.mouseX > skipX && p.mouseX < skipX + skipW && p.mouseY > skipY && p.mouseY < skipY + skipH;
@@ -1076,11 +1290,13 @@ function initSqueezeGame() {
       p.text('Skip  ›', skipX + skipW / 2, skipY + skipH / 2);
     }
 
+    // Keep the canvas filling the whole window if the browser is resized
     p.windowResized = function() {
       p.resizeCanvas(p.windowWidth, p.windowHeight);
       if (connectBtn) connectBtn.position(0, p.height - 100);
     };
 
+    // Called when the player navigates back to the main menu — resets everything to a clean slate
     window.resetSqueezeGame = function() {
       clearInterval(state.timerInterval);
       Object.assign(state, {
@@ -1097,6 +1313,7 @@ function initSqueezeGame() {
       else                 { gameStarted = false; tutorialActive = false; }
     };
 
+    // Toggles the Arduino connection on/off when the button is clicked
     async function toggleConnect() {
       if (serialConnected) { disconnectSerial(); return; }
       if (!('serial' in navigator)) {
@@ -1116,29 +1333,34 @@ function initSqueezeGame() {
       } catch(e) { alert('Connection failed: ' + e.message); }
     }
 
+    // Continuously reads lines from the Arduino over Web Serial.
+    // It looks for "FSR:<number>" in each line and updates the raw sensor value.
+    // EMA smoothing is applied immediately so the rest of the game always reads smoothedRaw.
     async function readSerial() {
       const decoder = new TextDecoderStream();
       port.readable.pipeTo(decoder.writable);
       reader = decoder.readable.getReader();
-      let buf = '';
+      let buf = ''; // partial line buffer — serial data can arrive mid-line
       try {
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
           buf += value;
           const lines = buf.split('\n');
-          buf = lines.pop();
+          buf = lines.pop(); // keep the incomplete last chunk for next time
           for (const line of lines) {
             const m = line.match(/FSR:(\d+)/);
             if (m) {
               state.currentRaw = parseInt(m[1]);
+              // Blend the new reading in gradually — sudden spikes won't snap the level immediately
               state.smoothedRaw = state.smoothedRaw + EMA_ALPHA * (state.currentRaw - state.smoothedRaw);
             }
           }
         }
-      } catch(e) { disconnectSerial(); }
+      } catch(e) { disconnectSerial(); } // if the port drops, clean up gracefully
     }
 
+    // Cleans up the serial connection and pauses the game if it drops mid-round
     async function disconnectSerial() {
       serialConnected = false;
       connectBtn.html('Connect Arduino (Web Serial)');
@@ -1155,30 +1377,39 @@ function initSqueezeGame() {
 }
 </script>
 
+<!-- ============================================================
+     FINGER MATH — Question logic + p5.js webcam game
+     ============================================================ -->
 <script>
+  // Game-wide state for Finger Math
   let currentQ = 0, score = 0, streak = 0, difficulty = 1;
   let results = [], answered = false, currentAnswer = 0;
 
+  // Generates one question based on the current difficulty level.
+  // Easy: small additions only. Medium: larger additions or subtractions. Hard: even bigger numbers.
+  // Numbers are chosen so the answer always fits on two hands (or can be built using the 10+remainder trick).
   function generateQuestion() {
     let a, b, op, text, answer;
     if (difficulty === 1) {
+      // Easy — both numbers are 1–4 so the sum is always ≤ 8, one hand can show it
       a = Math.floor(Math.random() * 4) + 1;
       b = Math.floor(Math.random() * 4) + 1;
       answer = a + b; text = a + ' + ' + b + ' = ?';
     } else if (difficulty === 2) {
-      op = Math.random() > 0.4 ? '+' : '-';
+      op = Math.random() > 0.4 ? '+' : '-'; // 60% addition, 40% subtraction
       if (op === '+') {
         a = Math.floor(Math.random() * 7) + 3;
         b = Math.floor(Math.random() * 7) + 2;
         answer = a + b; text = a + ' + ' + b + ' = ?';
       } else {
         a = Math.floor(Math.random() * 8) + 6;
-        b = Math.floor(Math.random() * (a - 1)) + 1;
+        b = Math.floor(Math.random() * (a - 1)) + 1; // b < a so the result is always positive
         answer = a - b; text = a + ' - ' + b + ' = ?';
       }
     } else {
       op = Math.random() > 0.4 ? '+' : '-';
       if (op === '+') {
+        // Hard addition — sums can go above 10 so the player needs the two-step trick
         a = Math.floor(Math.random() * 10) + 8;
         b = Math.floor(Math.random() * 8) + 3;
         answer = a + b; text = a + ' + ' + b + ' = ?';
@@ -1191,12 +1422,16 @@ function initSqueezeGame() {
     return { text, answer };
   }
 
+  // Returns the star label shown in the status bar so the player knows their current difficulty
   function getDifficultyLabel() {
     if (difficulty === 1) return '⭐ Easy';
     if (difficulty === 2) return '⭐⭐ Medium';
     return '⭐⭐⭐ Hard';
   }
 
+  // Sets up a new question on screen and resets all per-question UI state.
+  // Also rebuilds the row of progress dots at the bottom — the current dot is highlighted,
+  // and past dots are green (correct) or red (wrong) based on the results history.
   function loadQuestion() {
     const q = generateQuestion();
     currentAnswer = q.answer;
@@ -1206,11 +1441,12 @@ function initSqueezeGame() {
       getDifficultyLabel() + ' &nbsp;|&nbsp; Streak: <span class="saved">' + streak +
       '</span> &nbsp;|&nbsp; Show <span class="live">fingers</span> then <span class="saved">hold 5s</span>';
     answered = false;
-    if (window.resetSketch) window.resetSketch();
+    if (window.resetSketch) window.resetSketch(); // tell the p5 sketch to clear its per-question state too
     const dots = document.getElementById('progressDots');
     dots.innerHTML = '';
     for (let i = 0; i < 10; i++) {
       const d = document.createElement('div');
+      // Work out which slot in the results array lines up with this dot position
       const rel = currentQ % 10, resIdx = results.length - 10 + i;
       d.className = 'dot' +
         (i === rel ? ' current' :
@@ -1219,8 +1455,11 @@ function initSqueezeGame() {
     }
   }
 
+  // Called when the p5 sketch decides the player has held a finger count long enough.
+  // Checks correctness, updates score/streak/difficulty, shows the feedback overlay,
+  // then starts a 3-second countdown before moving to the next question.
   function submitAnswer(userAnswer) {
-    if (answered) return;
+    if (answered) return; // guard against being called twice in one question
     answered = true;
     const correct = currentAnswer, isCorrect = userAnswer === correct;
     const green = document.getElementById('greenLight');
@@ -1231,6 +1470,7 @@ function initSqueezeGame() {
     red.className   = 'indicator idle';
     if (isCorrect) {
       score++; streak++; results.push(true);
+      // Every 3 correct answers in a row bumps difficulty up one level (max 3)
       if (streak % 3 === 0 && difficulty < 3) difficulty++;
       green.className = 'indicator green';
       card.className  = 'question-card correct';
@@ -1241,7 +1481,7 @@ function initSqueezeGame() {
       overlay.className = 'feedback-overlay correct-fb show';
     } else {
       streak = 0; results.push(false);
-      if (difficulty > 1) difficulty--;
+      if (difficulty > 1) difficulty--; // ease off after a wrong answer
       red.className  = 'indicator red';
       card.className = 'question-card wrong';
       document.getElementById('feedbackEmoji').textContent  = '😅';
@@ -1251,6 +1491,7 @@ function initSqueezeGame() {
     }
     document.getElementById('scoreDisplay').textContent = score;
     setTimeout(() => { green.className = 'indicator idle'; red.className = 'indicator idle'; }, 2000);
+    // Count down 3 → 2 → 1 in the overlay, then load the next question
     let secondsLeft = 3;
     const countdownEl = document.getElementById('countdownText');
     countdownEl.textContent = `Next question in ${secondsLeft}...`;
@@ -1261,6 +1502,7 @@ function initSqueezeGame() {
     }, 1000);
   }
 
+  // Hides the feedback overlay and loads the next question
   function nextQuestion() {
     document.getElementById('feedbackOverlay').className = 'feedback-overlay';
     currentQ++;
@@ -1270,15 +1512,27 @@ function initSqueezeGame() {
   function initFingerGame() {
     new p5(function(p) {
       let handPose, video, hands = [], totalFingers = 0;
-      let fingerHistory = [];
-      const HISTORY_SIZE = 30;
-      let fistCount = 0;
-      const FIST_THRESHOLD = 10;
-      let accumulated = 0, graceUntilFrame = 0;
-      const GRACE_FRAMES = 60;
-      let holdStartFrame = null, holdLevel = null;
-      const HOLD_FRAMES = 150;
 
+      // Rolling history of recent non-fist finger counts — used to look back and confirm
+      // what the player was showing just before they made a fist
+      let fingerHistory = [];
+      const HISTORY_SIZE = 30; // keep the last 30 frames (~1 second at 30fps)
+
+      // Fist detection — we count how many consecutive frames both hands show 0 fingers
+      let fistCount = 0;
+      const FIST_THRESHOLD = 10; // must hold the fist for 10 frames to trigger (avoids accidental saves)
+
+      // For answers > 10, the player shows 10 → fist → remaining fingers.
+      // 'accumulated' stores the tens already confirmed; graceUntilFrame pauses the hold
+      // timer briefly after a fist so the new finger count doesn't immediately trigger.
+      let accumulated = 0, graceUntilFrame = 0;
+      const GRACE_FRAMES = 60; // ~2 seconds of grace at 30fps
+
+      // Hold timer — the player must show the same number of fingers for HOLD_FRAMES frames
+      let holdStartFrame = null, holdLevel = null;
+      const HOLD_FRAMES = 150; // 150 frames ≈ 5 seconds at 30fps
+
+      // Called by loadQuestion() to wipe all per-question state without destroying the sketch
       window.resetSketch = function() {
         accumulated = 0; graceUntilFrame = 0; fingerHistory = [];
         fistCount = 0; holdStartFrame = null; holdLevel = null;
@@ -1289,16 +1543,22 @@ function initSqueezeGame() {
         document.getElementById('firstNumberBanner').className = 'first-number-banner';
       };
 
+      // Load the ml5 hand-pose model before anything runs — flipped so the webcam acts like a mirror
       p.preload = function() { handPose = ml5.handPose({ flipped: true }); };
 
       p.setup = function() {
         let cnv = p.createCanvas(720, 540);
         cnv.parent('p5-container');
+        // Capture webcam video, hide the raw <video> element, and start hand detection
         video = p.createCapture(p.VIDEO, { flipped: true });
         video.size(720, 540); video.hide();
         handPose.detectStart(video, function(results) { hands = results; });
       };
 
+      // Counts how many fingers are extended on one hand using ml5 keypoint indices.
+      // Fingers 1–4: tip (index 8,12,16,20) is above its base knuckle (6,10,14,18) when extended.
+      // Thumb: we use distance from the palm centre instead of Y position because the thumb
+      // extends sideways, not upward, so the Y comparison doesn't work reliably.
       function countFingers(hand) {
         const tips = [8, 12, 16, 20], bases = [6, 10, 14, 18];
         let count = 0;
@@ -1308,30 +1568,44 @@ function initSqueezeGame() {
         const thumbTip = hand.keypoints[4], thumbBase = hand.keypoints[2], palmCenter = hand.keypoints[0];
         const thumbDist     = p.dist(thumbTip.x, thumbTip.y, palmCenter.x, palmCenter.y);
         const thumbBaseDist = p.dist(thumbBase.x, thumbBase.y, palmCenter.x, palmCenter.y);
+        // If the thumb tip is 1.6× further from the palm than the thumb base, it's extended
         if (thumbDist > thumbBaseDist * 1.6) count++;
         return count;
       }
 
+      // Main loop — runs every frame
       p.draw = function() {
         if (!document.getElementById('finger-screen').classList.contains('active')) return;
-        p.image(video, 0, 0);
+        p.image(video, 0, 0); // draw the webcam feed as the background
+
+        // Count total fingers across all detected hands and draw coloured dots on each joint
         totalFingers = 0;
         for (let i = 0; i < hands.length; i++) {
           const hand = hands[i];
           totalFingers += countFingers(hand);
           for (const kp of hand.keypoints) {
+            // Blue dots for the left hand, orange for the right — helps the player see tracking
             p.fill(hand.handedness === 'Left' ? p.color(0,150,255) : p.color(255,100,0));
             p.noStroke(); p.circle(kp.x, kp.y, 10);
           }
         }
+
+        // A fist = hand is visible but zero fingers are extended
         const isFist = hands.length > 0 && totalFingers === 0;
+
+        // Only record finger counts when the hand is open — we don't want fist frames in the history
         if (!isFist && hands.length > 0) {
           fingerHistory.push(totalFingers);
-          if (fingerHistory.length > HISTORY_SIZE) fingerHistory.shift();
+          if (fingerHistory.length > HISTORY_SIZE) fingerHistory.shift(); // drop the oldest frame
         }
+
+        // Track how many consecutive frames the player has been making a fist
         if (isFist) { fistCount++; } else { fistCount = 0; }
+
+        // When the player holds a fist long enough, check if they showed 10 fingers just before it.
+        // If yes, save 10 into 'accumulated' so they can show the remainder next.
         if (!answered && fistCount === FIST_THRESHOLD && fingerHistory.length > 0) {
-          const idx = Math.max(0, fingerHistory.length - 15);
+          const idx = Math.max(0, fingerHistory.length - 15); // look 15 frames back — just before the fist
           const savedValue = fingerHistory[idx];
           if (savedValue === 10) {
             accumulated += 10;
@@ -1340,17 +1614,25 @@ function initSqueezeGame() {
             document.getElementById('firstNumberBanner').className = 'first-number-banner show';
             document.getElementById('step1card').className = 'instruction-card';
             document.getElementById('step2card').className = 'instruction-card active';
+            // Clear hold state so the new finger count starts fresh
             fingerHistory = []; holdStartFrame = null; holdLevel = null;
+            // Give the player a moment to open their hand before the hold timer starts counting
             graceUntilFrame = p.frameCount + GRACE_FRAMES;
           }
         }
+
+        // Hold-to-confirm logic — only runs when hand is open, not a fist, and grace period is over
         const inGracePeriod = p.frameCount < graceUntilFrame;
         if (!answered && !inGracePeriod && !isFist && hands.length > 0 && totalFingers > 0) {
-          if (totalFingers !== holdLevel) { holdLevel = totalFingers; holdStartFrame = p.frameCount; }
-          else {
+          if (totalFingers !== holdLevel) {
+            // Finger count changed — restart the hold timer
+            holdLevel = totalFingers; holdStartFrame = p.frameCount;
+          } else {
+            // Same count as last frame — check if we've held long enough
             if (p.frameCount - holdStartFrame >= HOLD_FRAMES) {
               const total = accumulated + totalFingers;
               if (accumulated > 0) {
+                // Show the full sum in the overlay (e.g. "10+2=12")
                 document.getElementById('savedNum').textContent = accumulated + '+' + totalFingers + '=' + total;
               }
               submitAnswer(total);
@@ -1360,33 +1642,43 @@ function initSqueezeGame() {
             }
           }
         } else {
+          // Hand is a fist, gone, or in grace period — reset the hold timer
           holdStartFrame = null; holdLevel = null;
         }
+
+        // Update the live overlay numbers so the player can see what the camera is reading
         document.getElementById('liveNum').textContent = totalFingers;
         if (fingerHistory.length > 0) {
           document.getElementById('confirmedNum').textContent = fingerHistory[fingerHistory.length - 1];
         }
+
+        // Green progress bar along the bottom edge that fills up as the fist is held —
+        // gives the player visual feedback that their fist is being registered
         if (!answered && isFist && fistCount > 0) {
           const fistProgress = p.map(fistCount, 0, FIST_THRESHOLD, 0, p.width);
           p.noStroke(); p.fill(6, 214, 160, 180);
           p.rect(0, p.height - 8, fistProgress, 8, 4);
         }
+
+        // Countdown ring drawn over the player's palm while they're holding a finger count.
+        // The arc fills clockwise and a number in the centre counts down the remaining seconds.
         if (!answered && holdStartFrame !== null && holdLevel !== null && holdLevel > 0 && hands.length > 0) {
           const heldFrames = p.frameCount - holdStartFrame;
           const holdPct = p.constrain(heldFrames / HOLD_FRAMES, 0, 1);
           const palm = hands[0].keypoints[0], cx = palm.x, cy = palm.y, radius = 80;
-          p.noFill(); p.stroke(255, 255, 255, 60); p.strokeWeight(6); p.circle(cx, cy, radius * 2);
+          p.noFill(); p.stroke(255, 255, 255, 60); p.strokeWeight(6); p.circle(cx, cy, radius * 2); // background ring
           p.stroke(255, 209, 102); p.strokeWeight(8);
-          p.arc(cx, cy, radius * 2, radius * 2, -p.HALF_PI, -p.HALF_PI + p.TWO_PI * holdPct);
-          p.noStroke(); p.fill(0, 0, 0, 180); p.circle(cx, cy, 56);
+          p.arc(cx, cy, radius * 2, radius * 2, -p.HALF_PI, -p.HALF_PI + p.TWO_PI * holdPct); // fill arc
+          p.noStroke(); p.fill(0, 0, 0, 180); p.circle(cx, cy, 56); // dark centre disc
           p.fill(255, 209, 102); p.textAlign(p.CENTER, p.CENTER); p.textSize(28); p.textStyle(p.BOLD);
+          // Round up so it shows "1" right until the moment it confirms, never "0"
           const secondsLeft = Math.max(1, Math.ceil((HOLD_FRAMES - heldFrames) / 30));
           p.text(secondsLeft, cx, cy);
           p.textStyle(p.NORMAL);
         }
       };
     });
-    loadQuestion();
+    loadQuestion(); // kick off the first question as soon as the sketch is ready
   }
 </script>
 
