@@ -680,7 +680,7 @@ function initSqueezeGame() {
   const HYSTERESIS = 1;
 
   let state = {
-    qIndex: 0, score: 0, timeLeft: 10,
+    qIndex: 0, score: 0, timeLeft: 30,
     answered: false, currentRaw: 0, smoothedRaw: 0, particles: [], rings: [],
     timerInterval: null, gameOver: false,
     holdStart: null, holdLevel: null,
@@ -700,7 +700,7 @@ function initSqueezeGame() {
     "Hey! I'm Zorp\nWelcome to Squeeze It!",
     "A math question appears up top.\nPut the required pressure to sensor to reach the number you want!",
     "Hold steady at the correct number\nfor 1.5 seconds to confirm your answer.",
-    "You have 10 seconds per question.\nPress R after game over to play again!",
+    "You have 30 seconds per question.\nPress R after game over to play again!",
     "Alright, you're all set!\nLet's squeeze some math!"
   ];
   const SHAKE_FRAMES = 18, SHAKE_MAG = 7;
@@ -1122,7 +1122,7 @@ function initSqueezeGame() {
       clearInterval(state.timerInterval);
       Object.assign(state, {
         qIndex: 0, score: 0, correct: 0, wrong: 0, unanswered: 0,
-        answered: false, timeLeft: 10, currentRaw: 0, smoothedRaw: 0,
+        answered: false, timeLeft: 30, currentRaw: 0, smoothedRaw: 0,
         holdStart: null, holdLevel: null, particles: [], rings: [],
         timerInterval: null, gameOver: false
       });
