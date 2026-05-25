@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Draw &amp; Solve — Math Adventure</title>
+  <title>TechMath — Math Adventure</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.3/p5.min.js"></script>
   <script src="https://unpkg.com/ml5@1.2.1/dist/ml5.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
@@ -320,7 +320,14 @@
     .tutorial-hand.pop { animation: hand-pop 0.4s ease-out; }
     @keyframes hand-pop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
 
-    .tutorial-hint { color: rgba(255,255,255,0.85); font-size: 1.15rem; font-weight: 600; min-height: 28px; }
+    .tutorial-hint {
+      color: #fff;
+      font-size: 1.4rem;
+      font-weight: 700;
+      min-height: 36px;
+      line-height: 1.5;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
 
     .tutorial-ring {
       width: 140px; height: 140px; border-radius: 50%;
@@ -381,12 +388,11 @@
   </style>
 </head>
 <body>
-
-<div id="menu-screen" class="screen active">
+  <div id="menu-screen" class="screen active">
   <div class="bg-orb orb1"></div>
   <div class="bg-orb orb2"></div>
   <div class="menu-header">
-    <h1 class="menu-title">Draw &amp; Solve</h1>
+    <h1 class="menu-title">TechMath</h1>
     <div class="menu-subtitle">Math Adventure</div>
   </div>
   <div class="modes-container">
@@ -507,6 +513,9 @@
   }
 
   let tutorialStep = 0;
+  let substep = 0;
+  let showVisual = false;
+
   const tutorialOverlay  = () => document.getElementById('tutorialOverlay');
   const tutorialStage    = () => document.getElementById('tutorialStage');
   const tutorialTitle    = () => document.getElementById('tutorialTitle');
@@ -528,110 +537,73 @@
     }
   }
 
-  function clearStage() { tutorialStage().innerHTML = ''; }
-  function addToStage(html) { tutorialStage().innerHTML += html; }
-
-  function runSequence(steps) {
-    let totalDelay = 0;
-    steps.forEach(([delay, fn]) => { totalDelay += delay; setTimeout(fn, totalDelay); });
-    return totalDelay;
-  }
+  const SUBSTEPS = {
+    0: [
+      { hint: 'A math question will appear on screen.', stage: `<div class="tutorial-question">2 + 3 = ?</div>` },
+      { hint: 'The answer is 5 — show 5 fingers to the camera!', stage: `<div class="tutorial-question">2 + 3 = ?</div><div class="tutorial-hand pop">🖐️</div>` },
+      { hint: 'Now hold your hand steady for 5 seconds.', stage: `<div class="tutorial-question">2 + 3 = ?</div><div class="tutorial-ring"><div class="tutorial-ring-number">5</div></div>` },
+      { hint: 'Correct! Your answer is accepted.', stage: `<div class="tutorial-question">2 + 3 = ?</div><div class="tutorial-check">✓</div>` },
+    ],
+    1: [
+      { hint: 'What if the answer is bigger than 10?', stage: `<div class="tutorial-question">7 + 5 = ?</div>` },
+      { hint: 'The answer is 12. First, show 10 fingers with both hands.', stage: `<div class="tutorial-question">7 + 5 = ?</div><div class="tutorial-hand pop">🙌</div>` },
+      { hint: 'Make a quick fist ✊ to save the 10.', stage: `<div class="tutorial-question">7 + 5 = ?</div><div class="tutorial-hand pop">✊</div>` },
+      { hint: 'A yellow banner shows that 10 is saved.', stage: `<div class="tutorial-question">7 + 5 = ?</div><div class="tutorial-saved-badge">Saved: 10 + ?</div>` },
+      { hint: 'Now show the remaining 2 fingers.', stage: `<div class="tutorial-question">7 + 5 = ?</div><div class="tutorial-saved-badge">Saved: 10 + ?</div><div class="tutorial-hand pop">✌️</div>` },
+      { hint: 'Hold steady for 5 seconds to confirm.', stage: `<div class="tutorial-question">7 + 5 = ?</div><div class="tutorial-saved-badge">Saved: 10 + ?</div><div class="tutorial-ring"><div class="tutorial-ring-number">2</div></div>` },
+      { hint: '10 + 2 = 12. Correct!', stage: `<div class="tutorial-question">7 + 5 = ?</div><div class="tutorial-check">✓</div>` },
+    ],
+  };
 
   function playTutorialStep(step) {
-    tutorialNextBtn().style.display = 'none';
+    substep = 0;
+    showVisual = false;
     if (step === 0) {
       setStepDots(1);
       tutorialTitle().textContent = 'Single-digit answers';
       tutorialSubtitle().textContent = 'Show the number → hold steady';
-      clearStage();
-      runSequence([
-        [0, () => {
-          addToStage(`<div class="tutorial-question">2 + 3 = ?</div>`);
-          addToStage(`<div class="tutorial-hint">The answer is 5 — show 5 fingers!</div>`);
-        }],
-        [1200, () => {
-          tutorialStage().innerHTML = `
-            <div class="tutorial-question">2 + 3 = ?</div>
-            <div class="tutorial-hand pop">🖐️</div>
-            <div class="tutorial-hint">Now hold steady for 5 seconds...</div>`;
-        }],
-        [1500, () => {
-          tutorialStage().innerHTML = `
-            <div class="tutorial-question">2 + 3 = ?</div>
-            <div class="tutorial-ring"><div class="tutorial-ring-number">5</div></div>
-            <div class="tutorial-hint">Counting down — keep your hand still!</div>`;
-        }],
-        [2800, () => {
-          tutorialStage().innerHTML = `
-            <div class="tutorial-question">2 + 3 = ?</div>
-            <div class="tutorial-check">✓</div>
-            <div class="tutorial-hint" style="color:#06D6A0;">Correct! Answer accepted: 5</div>`;
-        }],
-        [1200, () => {
-          tutorialNextBtn().textContent = 'Next →';
-          tutorialNextBtn().style.display = 'inline-block';
-        }],
-      ]);
     } else if (step === 1) {
       setStepDots(2);
       tutorialTitle().textContent = 'Numbers bigger than 10';
       tutorialSubtitle().textContent = 'Show 10 → fist ✊ → remaining → hold';
-      clearStage();
-      runSequence([
-        [0, () => {
-          addToStage(`<div class="tutorial-question">7 + 5 = ?</div>`);
-          addToStage(`<div class="tutorial-hint">The answer is 12 — let's break it down!</div>`);
-        }],
-        [1500, () => {
-          tutorialStage().innerHTML = `
-            <div class="tutorial-question">7 + 5 = ?</div>
-            <div class="tutorial-hand pop">🙌</div>
-            <div class="tutorial-hint">Step 1: Show 10 fingers (both hands)</div>`;
-        }],
-        [1800, () => {
-          tutorialStage().innerHTML = `
-            <div class="tutorial-question">7 + 5 = ?</div>
-            <div class="tutorial-hand pop">✊</div>
-            <div class="tutorial-hint">Step 2: Make a quick fist to save the 10</div>`;
-        }],
-        [1500, () => {
-          tutorialStage().innerHTML = `
-            <div class="tutorial-question">7 + 5 = ?</div>
-            <div class="tutorial-saved-badge">Saved: 10 + ?</div>
-            <div class="tutorial-hint">Great! 10 is saved.</div>`;
-        }],
-        [1500, () => {
-          tutorialStage().innerHTML = `
-            <div class="tutorial-question">7 + 5 = ?</div>
-            <div class="tutorial-saved-badge">Saved: 10 + ?</div>
-            <div class="tutorial-hand pop">✌️</div>
-            <div class="tutorial-hint">Step 3: Show the remaining 2 fingers</div>`;
-        }],
-        [1800, () => {
-          tutorialStage().innerHTML = `
-            <div class="tutorial-question">7 + 5 = ?</div>
-            <div class="tutorial-saved-badge">Saved: 10 + ?</div>
-            <div class="tutorial-ring"><div class="tutorial-ring-number">2</div></div>
-            <div class="tutorial-hint">Step 4: Hold steady for 5 seconds...</div>`;
-        }],
-        [2800, () => {
-          tutorialStage().innerHTML = `
-            <div class="tutorial-question">7 + 5 = ?</div>
-            <div class="tutorial-check">✓</div>
-            <div class="tutorial-hint" style="color:#06D6A0;">Correct! 10 + 2 = 12</div>`;
-        }],
-        [1200, () => {
-          tutorialNextBtn().textContent = "Let's play! →";
-          tutorialNextBtn().style.display = 'inline-block';
-        }],
-      ]);
     }
+    renderSubstep();
+  }
+
+  function renderSubstep() {
+    const substeps = SUBSTEPS[tutorialStep];
+    const current = substeps[substep];
+    const isLastSubstep = substep === substeps.length - 1;
+    const isLastStep = tutorialStep === 1;
+
+    if (showVisual) {
+      tutorialStage().innerHTML = `${current.stage}<div class="tutorial-hint">${current.hint}</div>`;
+    } else {
+      tutorialStage().innerHTML = `<div class="tutorial-hint" style="font-size:1.6rem;">${current.hint}</div>`;
+    }
+
+    const btn = tutorialNextBtn();
+    if (showVisual && isLastSubstep && isLastStep)      btn.textContent = "Let's play! →";
+    else if (showVisual && isLastSubstep)               btn.textContent = 'Next lesson →';
+    else if (showVisual)                                btn.textContent = 'Next →';
+    else                                                btn.textContent = 'Show me →';
+    btn.style.display = 'inline-block';
   }
 
   function nextTutorialStep() {
-    tutorialStep++;
-    if (tutorialStep < 2) playTutorialStep(tutorialStep);
-    else endTutorial();
+    const substeps = SUBSTEPS[tutorialStep];
+    if (!showVisual) {
+      showVisual = true;
+      renderSubstep();
+    } else if (substep < substeps.length - 1) {
+      substep++;
+      showVisual = false;
+      renderSubstep();
+    } else {
+      tutorialStep++;
+      if (tutorialStep < 2) playTutorialStep(tutorialStep);
+      else endTutorial();
+    }
   }
 
   function skipTutorial() { endTutorial(); }
@@ -642,7 +614,7 @@
   }
 </script>
 
-<script>
+  <script>
 function initSqueezeGame() {
   function makeQuestion(op) {
     let a, b;
@@ -1046,7 +1018,6 @@ function initSqueezeGame() {
     };
 
     function drawTutorialScreen() {
-      // title
       p.textFont('Fredoka One');
       p.textAlign(p.CENTER, p.CENTER);
       p.fill(280, 55, 100); p.textSize(42);
@@ -1067,31 +1038,24 @@ function initSqueezeGame() {
       const tutAlienImg = isBlinking ? imgAlienClosedEyes : imgAlienIdle;
       p.imageMode(p.CORNER);
       p.image(tutAlienImg, alienCX - imgW / 2, alienCY - imgH / 2);
-      // glow
       const pulse = p.sin(p.frameCount * 0.07) * 0.5 + 0.5;
       p.noStroke(); p.fill(280, 70, 60, 8 + pulse * 8);
       p.rect(bx - 6, by - 6, bw + 12, bh + 12, 30);
-      // bubble tail
       p.fill(0, 0, 14); p.noStroke();
       p.triangle(bx - tailLen, alienCY, bx, alienCY - 20, bx, alienCY + 20);
-      // bubble body
       p.fill(0, 0, 14); p.stroke(280, 65, 80); p.strokeWeight(2.5);
       p.rect(bx, by, bw, bh, 24);
       p.noStroke();
-      // emoji
       p.textFont('monospace'); p.textSize(60);
       p.textAlign(p.CENTER, p.TOP);
       p.text(TUTORIAL_EMOJIS[tutorialMsgIndex], bcx, by + 28);
-      // message text
       p.textFont('Fredoka One'); p.fill(0, 0, 96); p.textSize(22);
       p.textLeading(32); p.textAlign(p.CENTER, p.TOP);
       p.text(TUTORIAL_MSGS[tutorialMsgIndex], bx + 32, by + 120, bw - 64);
-      // click-to-continue
       const isLast = tutorialMsgIndex === TUTORIAL_MSGS.length - 1;
       p.fill(280, 60, 90, 60 + pulse * 40); p.textSize(18);
       p.textAlign(p.CENTER, p.BOTTOM);
       p.text(isLast ? '▶  Click to start!' : '▶  Click to continue', bcx, by + bh - 30);
-      // nav dots
       const n = TUTORIAL_MSGS.length, dotY = by + bh + 26;
       for (let i = 0; i < n; i++) {
         const dx = bcx + (i - (n - 1) / 2) * 28;
@@ -1101,7 +1065,6 @@ function initSqueezeGame() {
         else                             p.fill(0, 0, 30);
         p.circle(dx, dotY, 12);
       }
-      // skip button
       const skipW = 140, skipH = 50;
       const skipX = p.width - skipW - 28, skipY = p.height - skipH - 24;
       const overSkip = p.mouseX > skipX && p.mouseX < skipX + skipW && p.mouseY > skipY && p.mouseY < skipY + skipH;
