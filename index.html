@@ -675,11 +675,13 @@ function initSqueezeGame() {
 
   let QUESTIONS = generateQuestions();
 
-  const THRESHOLD = 5, MAX_RAW = 30, TOTAL_ORBS = 10, HOLD_DURATION = 2000;
+  const THRESHOLD = 5, MAX_RAW = 30, TOTAL_ORBS = 10, HOLD_DURATION = 1500;
+  const EMA_ALPHA = 0.15;
+  const HYSTERESIS = 1;
 
   let state = {
     qIndex: 0, score: 0, timeLeft: 10,
-    answered: false, currentRaw: 0, particles: [], rings: [],
+    answered: false, currentRaw: 0, smoothedRaw: 0, particles: [], rings: [],
     timerInterval: null, gameOver: false,
     holdStart: null, holdLevel: null,
     correct: 0, wrong: 0, unanswered: 0,
@@ -693,12 +695,13 @@ function initSqueezeGame() {
   let imgAlienTransform1, imgAlienTransform2, imgAlienClosedEyes;
   let shakeTimer = 0;
   let tutorialActive = false, tutorialMsgIndex = 0;
+  const TUTORIAL_EMOJIS = ["👋", "🎯", "⏱️", "⏰", "🚀"];
   const TUTORIAL_MSGS = [
-    "Hey! I'm Zorp 👋\nWelcome to Squeeze It!",
+    "Hey! I'm Zorp\nWelcome to Squeeze It!",
     "A math question appears up top.\nPut the required pressure to sensor to reach the number you want!",
-    "Hold steady at the correct number\nfor 2 seconds to confirm your answer.",
+    "Hold steady at the correct number\nfor 1.5 seconds to confirm your answer.",
     "You have 10 seconds per question.\nPress R after game over to play again!",
-    "Alright, you're all set!\nLet's squeeze some math! 🚀"
+    "Alright, you're all set!\nLet's squeeze some math!"
   ];
   const SHAKE_FRAMES = 18, SHAKE_MAG = 7;
   let imgAlienIdle, imgAlienPush;
@@ -750,8 +753,8 @@ function initSqueezeGame() {
 
       const q   = QUESTIONS[p.min(state.qIndex, QUESTIONS.length - 1)];
       const ans = getAnswer(q);
-      const pct = p.constrain((state.currentRaw - THRESHOLD) / (MAX_RAW - THRESHOLD), 0, 1);
-      const level = rawToLevel(state.currentRaw, TOTAL_ORBS);
+      const pct = p.constrain((state.smoothedRaw - THRESHOLD) / (MAX_RAW - THRESHOLD), 0, 1);
+      const level = rawToLevel(state.smoothedRaw, TOTAL_ORBS);
 
       if (state.gameOver) { drawBgStars(); drawGameOver(); return; }
 
@@ -974,7 +977,7 @@ function initSqueezeGame() {
     }
 
     function loadQuestion() {
-      state.answered = false; state.timeLeft = 10; state.currentRaw = 0;
+      state.answered = false; state.timeLeft = 10; state.currentRaw = 0; state.smoothedRaw = 0;
       state.holdStart = null; state.holdLevel = null;
       clearInterval(state.timerInterval);
       if (state.qIndex === 0 && alienStage !== 'transform2') {
@@ -1001,7 +1004,7 @@ function initSqueezeGame() {
     function checkAnswer(level, ans) {
       if (state.answered) return;
       if (level > 0) {
-        if (level !== state.holdLevel) { state.holdStart = p.millis(); state.holdLevel = level; }
+        if (state.holdLevel === null || Math.abs(level - state.holdLevel) >= HYSTERESIS) { state.holdStart = p.millis(); state.holdLevel = level; }
         if (p.millis() - state.holdStart >= HOLD_DURATION) {
           state.answered = true;
           clearInterval(state.timerInterval);
@@ -1043,18 +1046,20 @@ function initSqueezeGame() {
     };
 
     function drawTutorialScreen() {
+      // title
+      p.textFont('Fredoka One');
       p.textAlign(p.CENTER, p.CENTER);
-      p.fill(280, 55, 100); p.textSize(34);
+      p.fill(280, 55, 100); p.textSize(42);
       p.text('How to Play', p.width / 2, p.height * 0.13);
-      p.fill(0, 0, 50); p.textSize(12);
-      p.text('SQUEEZE IT', p.width / 2, p.height * 0.13 + 34);
+      p.fill(280, 40, 70); p.textFont('monospace'); p.textSize(13);
+      p.text('SQUEEZE IT', p.width / 2, p.height * 0.13 + 40);
       if (!imgAlienIdle) return;
       const imgW = imgAlienIdle.width, imgH = imgAlienIdle.height;
       const alienCX = p.width * 0.38, alienCY = p.height * 0.56;
       const tailLen = 18;
       const bx  = p.width * 0.49;
-      const bw  = Math.min(420, p.width - bx - 30);
-      const bh  = 210;
+      const bw  = Math.min(500, p.width - bx - 30);
+      const bh  = 320;
       const by  = alienCY - bh / 2;
       const bcx = bx + bw / 2;
       const blinkCycle = p.millis() % 2200;
@@ -1062,27 +1067,41 @@ function initSqueezeGame() {
       const tutAlienImg = isBlinking ? imgAlienClosedEyes : imgAlienIdle;
       p.imageMode(p.CORNER);
       p.image(tutAlienImg, alienCX - imgW / 2, alienCY - imgH / 2);
-      p.fill(0, 0, 98); p.noStroke();
-      p.triangle(bx - tailLen, alienCY, bx, alienCY - 17, bx, alienCY + 17);
-      p.fill(0, 0, 98); p.stroke(280, 60, 100); p.strokeWeight(3);
-      p.rect(bx, by, bw, bh, 18);
-      p.noStroke(); p.fill(280, 80, 18); p.textSize(14);
-      p.textAlign(p.CENTER, p.TOP); p.textLeading(23);
-      p.text(TUTORIAL_MSGS[tutorialMsgIndex], bx + 20, by + 28, bw - 40, bh - 55);
-      const pulse = p.sin(p.frameCount * 0.09) * 0.5 + 0.5;
+      // glow
+      const pulse = p.sin(p.frameCount * 0.07) * 0.5 + 0.5;
+      p.noStroke(); p.fill(280, 70, 60, 8 + pulse * 8);
+      p.rect(bx - 6, by - 6, bw + 12, bh + 12, 30);
+      // bubble tail
+      p.fill(0, 0, 14); p.noStroke();
+      p.triangle(bx - tailLen, alienCY, bx, alienCY - 20, bx, alienCY + 20);
+      // bubble body
+      p.fill(0, 0, 14); p.stroke(280, 65, 80); p.strokeWeight(2.5);
+      p.rect(bx, by, bw, bh, 24);
+      p.noStroke();
+      // emoji
+      p.textFont('monospace'); p.textSize(60);
+      p.textAlign(p.CENTER, p.TOP);
+      p.text(TUTORIAL_EMOJIS[tutorialMsgIndex], bcx, by + 28);
+      // message text
+      p.textFont('Fredoka One'); p.fill(0, 0, 96); p.textSize(22);
+      p.textLeading(32); p.textAlign(p.CENTER, p.TOP);
+      p.text(TUTORIAL_MSGS[tutorialMsgIndex], bx + 32, by + 120, bw - 64);
+      // click-to-continue
       const isLast = tutorialMsgIndex === TUTORIAL_MSGS.length - 1;
-      p.fill(280, 55, 55, 55 + pulse * 45); p.textSize(12);
+      p.fill(280, 60, 90, 60 + pulse * 40); p.textSize(18);
       p.textAlign(p.CENTER, p.BOTTOM);
-      p.text(isLast ? '▶  Click to start!' : '▶  Click to continue', bcx, by + bh - 10);
-      const n = TUTORIAL_MSGS.length, dotY = by + bh + 22;
+      p.text(isLast ? '▶  Click to start!' : '▶  Click to continue', bcx, by + bh - 30);
+      // nav dots
+      const n = TUTORIAL_MSGS.length, dotY = by + bh + 26;
       for (let i = 0; i < n; i++) {
-        const dx = bcx + (i - (n - 1) / 2) * 18;
+        const dx = bcx + (i - (n - 1) / 2) * 28;
         p.noStroke();
         if      (i < tutorialMsgIndex)  p.fill(140, 50, 65);
         else if (i === tutorialMsgIndex) p.fill(280, 65, 100);
         else                             p.fill(0, 0, 30);
-        p.circle(dx, dotY, i === tutorialMsgIndex ? 11 : 7);
+        p.circle(dx, dotY, 12);
       }
+      // skip button
       const skipW = 140, skipH = 50;
       const skipX = p.width - skipW - 28, skipY = p.height - skipH - 24;
       const overSkip = p.mouseX > skipX && p.mouseX < skipX + skipW && p.mouseY > skipY && p.mouseY < skipY + skipH;
@@ -1090,7 +1109,7 @@ function initSqueezeGame() {
       p.stroke(0, 0, overSkip ? 70 : 40); p.strokeWeight(1.5);
       p.rect(skipX, skipY, skipW, skipH, 20);
       p.noStroke(); p.fill(0, 0, overSkip ? 90 : 60);
-      p.textSize(16); p.textAlign(p.CENTER, p.CENTER);
+      p.textFont('monospace'); p.textSize(16); p.textAlign(p.CENTER, p.CENTER);
       p.text('Skip  ›', skipX + skipW / 2, skipY + skipH / 2);
     }
 
@@ -1103,7 +1122,7 @@ function initSqueezeGame() {
       clearInterval(state.timerInterval);
       Object.assign(state, {
         qIndex: 0, score: 0, correct: 0, wrong: 0, unanswered: 0,
-        answered: false, timeLeft: 10, currentRaw: 0,
+        answered: false, timeLeft: 10, currentRaw: 0, smoothedRaw: 0,
         holdStart: null, holdLevel: null, particles: [], rings: [],
         timerInterval: null, gameOver: false
       });
@@ -1148,7 +1167,10 @@ function initSqueezeGame() {
           buf = lines.pop();
           for (const line of lines) {
             const m = line.match(/FSR:(\d+)/);
-            if (m) state.currentRaw = parseInt(m[1]);
+            if (m) {
+              state.currentRaw = parseInt(m[1]);
+              state.smoothedRaw = state.smoothedRaw + EMA_ALPHA * (state.currentRaw - state.smoothedRaw);
+            }
           }
         }
       } catch(e) { disconnectSerial(); }
@@ -1163,7 +1185,7 @@ function initSqueezeGame() {
       if (gameStarted && !state.gameOver) {
         disconnectedMidGame = true;
         clearInterval(state.timerInterval);
-        state.currentRaw = 0; state.holdStart = null; state.holdLevel = null;
+        state.currentRaw = 0; state.smoothedRaw = 0; state.holdStart = null; state.holdLevel = null;
       }
     }
   });
