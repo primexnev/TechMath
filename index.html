@@ -1133,7 +1133,7 @@ function initSqueezeGame() {
     // Resets state for a fresh question and (re)starts the countdown timer.
     // On the very first question, the alien plays its intro animation before the timer starts.
     function loadQuestion() {
-      state.answered = false; state.timeLeft = 10; state.currentRaw = 0; state.smoothedRaw = 0;
+      state.answered = false; state.timeLeft = 30; state.currentRaw = 0; state.smoothedRaw = 0;
       state.holdStart = null; state.holdLevel = null;
       clearInterval(state.timerInterval);
       if (state.qIndex === 0 && alienStage !== 'transform2') {
